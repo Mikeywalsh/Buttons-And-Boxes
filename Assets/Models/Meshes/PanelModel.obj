@@ -1,0 +1,16 @@
+# Blender v2.70 (sub 0) OBJ File: 'puzzleGameModels.blend'
+# www.blender.org
+mtllib PanelModel.mtl
+o Panel_Cube.036
+v -1.000000 -1.000000 1.000000
+v -1.000000 -1.000000 -1.000000
+v 1.000000 -1.000000 -1.000000
+v 1.000000 -1.000000 1.000000
+vt 0.000100 0.999900
+vt 0.000100 0.000100
+vt 0.999900 0.999900
+vt 0.999900 0.000100
+usemtl None
+s off
+f 2/1 1/2 3/3
+f 4/4 3/3 1/2

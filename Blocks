@@ -1,0 +1,20 @@
+{	
+	"groundtypes" : 
+	{
+		"F": "Floor Block",
+		"P": "Pit",
+		"I": "Ice Block",
+		"X": "Finish Block"
+	},
+	"entitytypes" :
+	{
+		"C": "Crate",
+		"P": "Player",
+		"W": "Wall"
+	},
+	"mechanismtypes" :
+	{
+		"A": "Button",
+		"B": "Door"
+	}
+}
