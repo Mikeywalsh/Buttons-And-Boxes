@@ -447,10 +447,10 @@ sealed public class LevelEditor : MonoBehaviour {
 
     private void SaveLevel(Dictionary<string, object> levelData)
     {
-        string serialized = Json.Serialize(levelData); ;
+        string serialized = Json.Serialize(levelData);
 
-        if(System.IO.File.Exists("User Levels\\" + levelName + ".lv"))
-            System.IO.File.Delete("User Levels\\" + levelName + ".lv");
+        //if(System.IO.File.Exists("User Levels\\" + levelName + ".lv"))
+            //System.IO.File.Delete("User Levels\\" + levelName + ".lv");
         System.IO.File.WriteAllText("User Levels\\" + levelName + ".lv", serialized);
     }
 
@@ -639,7 +639,7 @@ sealed public class LevelEditor : MonoBehaviour {
                 levelInformation.FindChild("Open Level Image").GetComponent<Image>().sprite = questionMark;
             }
 
-        Debug.Log((string)levelData["name"]);
+            Debug.Log((string)levelData["name"]);
             levelInformation.FindChild("Open Level Name Text").GetComponent<Text>().text =  "Level Name: " + (string)levelData["name"];
             levelInformation.FindChild("Open Level Difficulty Text").GetComponent<Text>().text = "Difficulty: " + (string)levelData["difficulty"];
             levelInformation.FindChild("Open Level Dimensions Text").GetComponent<Text>().text = "Dimensions: " + ((string)levelData["dimensions"]).Substring(0,2) + " x " + ((string)levelData["dimensions"]).Substring(2, 2);
