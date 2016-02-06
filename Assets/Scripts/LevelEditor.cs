@@ -438,9 +438,9 @@ sealed public class LevelEditor : MonoBehaviour {
 		levelData.Add ("creator", "Michael");
 		levelData.Add ("colour", RedInput.value.ToString("000") + GreenInput.value.ToString("000") + BlueInput.value.ToString("000"));
 		levelData.Add ("dimensions", (maxX - minX + 1).ToString("00") + (maxY - minY + 1).ToString("00"));
-		levelData.Add ("groundlayer", groundLayer);
-		levelData.Add ("entitylayer", entityLayer);
-		levelData.Add ("mechanismlayer", mechanismLayer);
+		levelData.Add ("groundlayer", Crypto.Compress(groundLayer));
+		levelData.Add ("entitylayer", Crypto.Compress(entityLayer));
+		levelData.Add ("mechanismlayer", Crypto.Compress(mechanismLayer));
 
         return levelData;
 	}

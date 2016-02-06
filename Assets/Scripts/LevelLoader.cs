@@ -48,9 +48,9 @@ sealed public class LevelLoader : MonoBehaviour {
         int levelWidth = int.Parse(((string)levelData["dimensions"]).Substring(0,2));
 		int levelHeight = int.Parse(((string)levelData["dimensions"]).Substring(2,2));
 		Color backgroundColor = (Color)new Color32(byte.Parse(((string)levelData["colour"]).Substring(0,3)), byte.Parse(((string)levelData["colour"]).Substring(3,3)), byte.Parse(((string)levelData["colour"]).Substring(6,3)), 1);
-		string rawGroundLayer = ((string)levelData["groundlayer"]);
-		string rawEntityLayer = ((string)levelData["entitylayer"]);
-		string rawMechanismLayer = ((string)levelData["mechanismlayer"]);
+		string rawGroundLayer = Crypto.Decompress((string)levelData["groundlayer"]);
+		string rawEntityLayer = Crypto.Decompress((string)levelData["entitylayer"]);
+		string rawMechanismLayer = Crypto.Decompress((string)levelData["mechanismlayer"]);
 
 		char[,] groundLayer = new char[levelWidth, levelHeight];
 		char[,] entityLayer = new char[levelWidth, levelHeight];

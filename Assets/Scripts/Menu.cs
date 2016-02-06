@@ -13,8 +13,8 @@ public class Menu : MonoBehaviour {
 
         //System.IO.File.WriteAllText("User Levels\\Beginner Buttons.lv",Crypto.Encrypt(System.IO.File.ReadAllText("User Levels\\Beginner Buttons.lv")));
         //System.IO.File.WriteAllText("User Levels\\Beginner Buttons.lv", Crypto.Decrypt(System.IO.File.ReadAllText("User Levels\\aaa.lv")));
-        //Debug.Log(Crypto.Compress("aaaaaaauuuee"));
         Debug.Log(PlayerPrefs.GetInt("currentLevel").ToString());
+
         GameObject.Find("Level Select Button").GetComponent<Button>().interactable = false;
 		if(GameData.initialized == false)
 			GameData.Initialize();
