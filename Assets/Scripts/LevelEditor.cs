@@ -60,7 +60,8 @@ sealed public class LevelEditor : MonoBehaviour {
 	private Mechanism[,] mechanisms = new Mechanism[30,30];
 
 	void Start () {
-		sessionID = "";
+        //System.IO.File.WriteAllText("User Levels\\HUGE level.lv", Crypto.Decompress(System.IO.File.ReadAllText("User Levels\\HUGE level.lv")));
+        sessionID = "";
         //GameData.Initialize();
 
         if (loadingLevel)
@@ -81,7 +82,6 @@ sealed public class LevelEditor : MonoBehaviour {
 	}
 
 	void Update () {
-
         if (!selectionPanel.activeSelf)
             return;
          
@@ -93,10 +93,6 @@ sealed public class LevelEditor : MonoBehaviour {
 
 		if(Input.GetKeyDown(KeyCode.U))
 			StartCoroutine(GetUserFromSession());
-
-		//For debugging purposes, delete later
-		if(Input.GetKeyDown(KeyCode.Escape))
-			Application.LoadLevel(0);
         
 		//Reset Selected arrow each frame
 		if(currentArrow)
@@ -438,9 +434,9 @@ sealed public class LevelEditor : MonoBehaviour {
 		levelData.Add ("creator", "Michael");
 		levelData.Add ("colour", RedInput.value.ToString("000") + GreenInput.value.ToString("000") + BlueInput.value.ToString("000"));
 		levelData.Add ("dimensions", (maxX - minX + 1).ToString("00") + (maxY - minY + 1).ToString("00"));
-		levelData.Add ("groundlayer", Crypto.Compress(groundLayer));
-		levelData.Add ("entitylayer", Crypto.Compress(entityLayer));
-		levelData.Add ("mechanismlayer", Crypto.Compress(mechanismLayer));
+        levelData.Add("groundlayer", Crypto.Compress(groundLayer));
+        levelData.Add("entitylayer", Crypto.Compress(entityLayer));
+        levelData.Add("mechanismlayer", Crypto.Compress(mechanismLayer));
 
         return levelData;
 	}
@@ -449,9 +445,7 @@ sealed public class LevelEditor : MonoBehaviour {
     {
         string serialized = Json.Serialize(levelData);
 
-        //if(System.IO.File.Exists("User Levels\\" + levelName + ".lv"))
-            //System.IO.File.Delete("User Levels\\" + levelName + ".lv");
-        System.IO.File.WriteAllText("User Levels\\" + levelName + ".lv", serialized);
+        System.IO.File.WriteAllText("User Levels\\" + levelName + ".lv", Crypto.Encrypt(serialized));
     }
 
     public void TestLevel()
@@ -620,7 +614,7 @@ sealed public class LevelEditor : MonoBehaviour {
     {
         Texture2D levelImage = null;
         string levelPath = "User Levels\\" + GameObject.Find("Open Level Field").GetComponent<Text>().text;
-        Dictionary<string, object> levelData = Json.Deserialize(System.IO.File.ReadAllText(levelPath + ".lv")) as Dictionary<string, object>;
+        Dictionary<string, object> levelData = Json.Deserialize(Crypto.Decrypt(System.IO.File.ReadAllText(levelPath + ".lv"))) as Dictionary<string, object>;
 
         //Exit method if selected level file does not exist
         try
@@ -725,9 +719,10 @@ sealed public class LevelEditor : MonoBehaviour {
         }
     }
 
+    //Called when the user wants to load a previously saved level
     private void LoadLevel(string levelPath)
     {
-        LoadLevel(Json.Deserialize(System.IO.File.ReadAllText(levelPath)) as Dictionary<string, object>);
+        LoadLevel(Json.Deserialize(Crypto.Decrypt(System.IO.File.ReadAllText(levelPath))) as Dictionary<string, object>);
         LevelActionSelect("Back");
     }
 

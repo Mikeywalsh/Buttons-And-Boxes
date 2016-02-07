@@ -1,5 +1,4 @@
 ﻿using System;
-using UnityEngine;
 using System.IO;
 using System.Security.Cryptography;
 
@@ -7,53 +6,53 @@ using System.Security.Cryptography;
 public class Crypto
 {
     //Standard XOR with randomly generated 10-byte long key. Not secure at all!
-    //public static string Encrypt(string toEncrypt)
-    //{
-    //    char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".ToCharArray();
-    //    char[] key = new char[10];
-    //    string finalString = "";
-    //    Random random = new Random();
+    public static string Encrypt(string toEncrypt)
+    {
+        char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".ToCharArray();
+        char[] key = new char[10];
+        string finalString = "";
+        Random random = new Random();
 
-    //    //Randomize key
-    //    for (int i = 0; i < key.Length; i++)
-    //    {
-    //        key[i] = chars[random.Next(chars.Length)];
-    //    }
+        //Randomize key
+        for (int i = 0; i < key.Length; i++)
+        {
+            key[i] = chars[random.Next(chars.Length)];
+        }
 
-    //    //Add key to start on final string
-    //    for (int i = 0; i < key.Length; i++)
-    //    {
-    //        finalString += (char)~key[i];
-    //    }
+        //Add key to start on final string
+        for (int i = 0; i < key.Length; i++)
+        {
+            finalString += (char)~key[i];
+        }
 
-    //    //Add XOR'd data to final string
-    //    for (int i = 0; i < toEncrypt.Length; i++)
-    //    {
-    //        finalString += (char)(toEncrypt[i] ^ key[i % 10]);
-    //    }
-        
-    //    return finalString; 
-    //}
+        //Add XOR'd data to final string
+        for (int i = 0; i < toEncrypt.Length; i++)
+        {
+            finalString += (char)(toEncrypt[i] ^ key[i % 10]);
+        }
 
-    //public static string Decrypt(string toDecrypt)
-    //{
-    //    string key = toDecrypt.Substring(0, 10);
-    //    string actualKey = "";
-    //    string data = toDecrypt.Substring(10);
-    //    string decryptedData = "";
+        return finalString;
+    }
 
-    //    for (int i = 0; i < key.Length; i++)
-    //    {
-    //        actualKey += (char)~key[i];
-    //    }
+    public static string Decrypt(string toDecrypt)
+    {
+        string key = toDecrypt.Substring(0, 10);
+        string actualKey = "";
+        string data = toDecrypt.Substring(10);
+        string decryptedData = "";
 
-    //    for (int i = 0; i < data.Length; i++)
-    //    {
-    //        decryptedData += (char)(data[i] ^ actualKey[i % 10]);
-    //    }
+        for (int i = 0; i < key.Length; i++)
+        {
+            actualKey += (char)~key[i];
+        }
 
-    //    return decryptedData;
-    //}
+        for (int i = 0; i < data.Length; i++)
+        {
+            decryptedData += (char)(data[i] ^ actualKey[i % 10]);
+        }
+
+        return decryptedData;
+    }
 
     public static string Compress(string toCompress)
     {
@@ -83,19 +82,6 @@ public class Crypto
         string countString = "";
         int offset = 0;
 
-        //for(int i = 0; i < toDecompress.Length; i ++)
-        //{
-        //    if (int.TryParse(toDecompress[i].ToString(), out occurence))
-        //    {
-        //        for (int j = 0; j < occurence; j++)
-        //            decompressedData += toDecompress[i + 1];
-        //        i++;
-        //    }
-        //    else
-        //        decompressedData += toDecompress[i];
-
-        //}
-
         for (int i = 0; i < toDecompress.Length; i++)
         {
             countString = "";
@@ -111,7 +97,7 @@ public class Crypto
                 else
                     break;
             }
-            Debug.Log("count: " + countString);
+
             if (countString.Length != 0)
             {
                 count = int.Parse(countString);

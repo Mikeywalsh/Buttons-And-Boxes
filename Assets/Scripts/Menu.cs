@@ -12,7 +12,8 @@ public class Menu : MonoBehaviour {
 	void Start () {
 
         //System.IO.File.WriteAllText("User Levels\\Beginner Buttons.lv",Crypto.Encrypt(System.IO.File.ReadAllText("User Levels\\Beginner Buttons.lv")));
-        //System.IO.File.WriteAllText("User Levels\\Beginner Buttons.lv", Crypto.Decrypt(System.IO.File.ReadAllText("User Levels\\aaa.lv")));
+        //System.IO.File.WriteAllText("User Levels\\HUGE level.lv", Crypto.Decrypt(System.IO.File.ReadAllText("User Levels\\HUGE level.lv")));
+        //System.IO.File.WriteAllText("User Levels\\Larger Level.lv", Crypto.Decompress(System.IO.File.ReadAllText("User Levels\\Larger Level.lv")));
         Debug.Log(PlayerPrefs.GetInt("currentLevel").ToString());
 
         GameObject.Find("Level Select Button").GetComponent<Button>().interactable = false;

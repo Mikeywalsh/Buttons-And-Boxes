@@ -12,7 +12,7 @@ sealed public class LevelLoader : MonoBehaviour {
     //Called when loading a level outside of the level editor
     public static Level Load(string path, int index)
     {
-        string rawJSON = System.IO.File.ReadAllText(path);
+        string rawJSON = Crypto.Decrypt(System.IO.File.ReadAllText(path));
         List<object> allLevels = Json.Deserialize(rawJSON) as List<object>;
         Dictionary<string, object> levelData = allLevels[index] as Dictionary<string, object>;
 
