@@ -193,7 +193,15 @@ sealed public class LevelEditor : MonoBehaviour {
 				//Stop the user from deleting ground if there is another object resting on it
 				if(selectedLayer == 'G' && (entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != null || mechanismLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != null))
 					return;
-                    
+
+                //Stop the user from deleting mechanisms if they have selected an entity
+                if(selectedLayer == 'E' && mechanismLayout[(int)(mouseVector.x / 2),(int)(mouseVector.z / 2)] != null)
+                    return;
+
+                //Stop the user from deleting entities if they have selected a mechanism
+                if (selectedLayer == 'M' && entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != null)
+                    return;
+
                 StartCoroutine(DeleteBlock(selectedLayer, (int)(mouseVector.x / 2), (int)(mouseVector.z / 2)));
 			}
 			#endregion
@@ -428,12 +436,12 @@ sealed public class LevelEditor : MonoBehaviour {
 			}
 		}
 
-		levelData.Add ("id", "L0003");
-		levelData.Add ("name", levelName);
-        levelData.Add ("difficulty", levelDifficulty);
-		levelData.Add ("creator", "Michael");
-		levelData.Add ("colour", RedInput.value.ToString("000") + GreenInput.value.ToString("000") + BlueInput.value.ToString("000"));
-		levelData.Add ("dimensions", (maxX - minX + 1).ToString("00") + (maxY - minY + 1).ToString("00"));
+		levelData.Add("id", "L0003");
+		levelData.Add("name", levelName);
+        levelData.Add("difficulty", levelDifficulty);
+		levelData.Add("creator", "Michael");
+		levelData.Add("colour", RedInput.value.ToString("000") + GreenInput.value.ToString("000") + BlueInput.value.ToString("000"));
+		levelData.Add("dimensions", (maxX - minX + 1).ToString("00") + (maxY - minY + 1).ToString("00"));
         levelData.Add("groundlayer", Crypto.Compress(groundLayer));
         levelData.Add("entitylayer", Crypto.Compress(entityLayer));
         levelData.Add("mechanismlayer", Crypto.Compress(mechanismLayer));
@@ -738,6 +746,11 @@ sealed public class LevelEditor : MonoBehaviour {
     {
         Level levelToLoad = LevelLoader.LoadFromJSON(levelData, -1);
         levelColor = levelToLoad.BackgroundColor;
+
+        Debug.Log(levelColor.r.ToString());
+        Debug.Log(levelColor.g.ToString());
+        Debug.Log(levelColor.b.ToString());
+
         levelName = levelToLoad.Name;
         levelDifficulty = levelToLoad.Difficulty;
 

@@ -79,9 +79,13 @@ sealed public class LevelLoader : MonoBehaviour {
 
 		if(rawGroundLayer.Length != levelHeight * levelWidth || rawEntityLayer.Length != levelHeight * levelWidth || rawMechanismLayer.Length != levelHeight * levelWidth)
 			throw new Exception("Invalid Block Count");
-		#endregion
+        #endregion
 
-		Camera.main.GetComponent<CameraControl>().ChangeBackgroundColour(backgroundColor);
+        //Change the background color instantly if loading into level edior, or tween it if not
+        if (Application.loadedLevel == 3)
+            Camera.main.backgroundColor = backgroundColor;
+        else
+		    Camera.main.GetComponent<CameraControl>().ChangeBackgroundColour(backgroundColor);
 
 		for(int y = 0; y < levelHeight; y++)
 		{
