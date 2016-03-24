@@ -92,7 +92,7 @@ public sealed class CameraControl : MonoBehaviour {
 
     void ChangeZoomTween()
 	{
-		//TODO Create smoother zooming transition
+		//TODO: Create smoother zooming transition
 	}
 	
 	void ChangePivotTween(Vector3 val)

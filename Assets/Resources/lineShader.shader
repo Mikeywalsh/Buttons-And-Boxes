@@ -86,9 +86,9 @@
 					o.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
 					o.texcoord2 = TRANSFORM_TEX(v.texcoord2 * _DetailTex_TexelSize.xy, _DetailTex);
 					o.color = v.color;
-#ifdef UNITY_HALF_TEXEL_OFFSET
+					#ifdef UNITY_HALF_TEXEL_OFFSET
 					o.vertex.xy += (_ScreenParams.zw-1.0)*float2(-1,1);
-#endif
+					#endif
 					return o;
 				}
 				
@@ -102,7 +102,6 @@
 					return col;
 				}
 			ENDCG
-
 		}
 	}
 }

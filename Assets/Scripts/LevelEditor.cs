@@ -15,6 +15,8 @@ sealed public class LevelEditor : MonoBehaviour {
     public GameObject settingsPanel;
     public GameObject openLevelPanel;
     public GameObject tinkerPanel;
+    public GameObject requirementsPanel;
+    public GameObject screenshotPanel;
     public GameObject messagePanel;
     public GameObject messageText;
     public GameObject errorText;
@@ -30,7 +32,10 @@ sealed public class LevelEditor : MonoBehaviour {
     public Sprite questionMark;
     public string levelName;
     public string levelDifficulty;
+    public bool levelCompleted;
 
+    private int playerX;
+    private int playerY;
 	private string sessionID;
     private Color32 levelColor;
 	private RaycastHit hit;	
@@ -39,12 +44,12 @@ sealed public class LevelEditor : MonoBehaviour {
 	private GameObject currentArrow;
     private GameObject activePanel;
     private Transform currentButton;
+    private Texture2D levelImage;
 	private Plane ground = new Plane(Vector3.up, Vector3.zero);
 	private Vector3 mouseVector;
 	private float hitDist;
 	private bool validChoice;
 	private bool cursorOOB;
-	private bool startedDrag;
 
 	private int currentWidth;
 	private int currentLength;
@@ -60,9 +65,9 @@ sealed public class LevelEditor : MonoBehaviour {
 	private Mechanism[,] mechanisms = new Mechanism[30,30];
 
 	void Start () {
-        //System.IO.File.WriteAllText("User Levels\\HUGE level.lv", Crypto.Decompress(System.IO.File.ReadAllText("User Levels\\HUGE level.lv")));
         sessionID = "";
-        //GameData.Initialize();
+        playerX = -1;
+        GameData.Initialize();
 
         if (loadingLevel)
         {
@@ -85,7 +90,10 @@ sealed public class LevelEditor : MonoBehaviour {
         if (!selectionPanel.activeSelf)
             return;
          
-		if(Input.GetKeyDown(KeyCode.O))
+        if(requirementsPanel.activeSelf)
+            requirementsPanel.GetComponent<RectTransform>().anchoredPosition = new Vector2(Input.mousePosition.x + (GameObject.Find("Requirements Panel").GetComponent<RectTransform>().rect.width / 2), Input.mousePosition.y - Screen.height - (GameObject.Find("Requirements Panel").GetComponent<RectTransform>().rect.height / 2));
+
+        if (Input.GetKeyDown(KeyCode.O))
 			levelAsJSON();
 
 		if(Input.GetKeyDown(KeyCode.Y))
@@ -132,7 +140,6 @@ sealed public class LevelEditor : MonoBehaviour {
 			}
 			else
 			{
-				//startedDrag = false;
 				cursorOOB = true;
 			}
 
@@ -150,9 +157,8 @@ sealed public class LevelEditor : MonoBehaviour {
 			#endregion
 
 			#region Instantiate Or Destroy A Level Object Based On Users Input
-			if((Input.GetMouseButtonDown(0) || Input.GetMouseButton(0) && startedDrag) && validChoice && !cursorOOB)
+			if(Input.GetMouseButton(0) && validChoice && !cursorOOB)
 			{
-				startedDrag = true;
 				if(selectedLayer == 'G')
 				{
 					currentObject = Instantiate(GameData.GroundTypes[selectedBlock], mouseVector - new Vector3(0, 1, 0), Quaternion.identity) as GameObject;
@@ -162,6 +168,14 @@ sealed public class LevelEditor : MonoBehaviour {
 				{
 					currentObject = Instantiate(GameData.EntityTypes[selectedBlock], mouseVector + new Vector3(0, 1, 0), Quaternion.identity) as GameObject;
 					entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] = selectedBlock;
+
+                    if(selectedBlock == 'P')
+                    {
+                        if(playerX != -1)
+                            StartCoroutine(DeleteBlock('E', playerX, playerY));
+                        playerX = (int)(mouseVector.x / 2);
+                        playerY = (int)(mouseVector.z / 2);
+                    }
 				}
 				else if(selectedLayer == 'M')
 				{
@@ -177,7 +191,7 @@ sealed public class LevelEditor : MonoBehaviour {
                         Destroy(selectedMechObject);
                         selectedMechObject = Instantiate(Resources.Load("SelectedMechanism"), mouseVector + new Vector3(0, 1, 0), Quaternion.Euler(new Vector3(-90, 0, 0))) as GameObject;
                         selectedMechanism = mechanisms[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)];
-                        openTinker();
+                        OpenTinker();
                     }
                 }
 
@@ -188,12 +202,23 @@ sealed public class LevelEditor : MonoBehaviour {
                     currentObject.GetComponent<Block>().Spawn(0, selectedBlock);
                 }
 			}
-			else if((Input.GetMouseButtonDown(1) || Input.GetMouseButton(1) && startedDrag) && !validChoice && !cursorOOB)
+			else if(Input.GetMouseButton(1) && !validChoice && !cursorOOB)
 			{
 				//Stop the user from deleting ground if there is another object resting on it
 				if(selectedLayer == 'G' && (entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != null || mechanismLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != null))
 					return;
-                    
+
+                //Stop the user from deleting mechanisms if they have selected an entity
+                if(selectedLayer == 'E' && mechanismLayout[(int)(mouseVector.x / 2),(int)(mouseVector.z / 2)] != null)
+                    return;
+
+                //Stop the user from deleting entities if they have selected a mechanism
+                if (selectedLayer == 'M' && entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != null)
+                    return;
+
+                if(selectedLayer == 'E' && entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == 'P')
+                    playerX = -1;
+
                 StartCoroutine(DeleteBlock(selectedLayer, (int)(mouseVector.x / 2), (int)(mouseVector.z / 2)));
 			}
 			#endregion
@@ -222,7 +247,6 @@ sealed public class LevelEditor : MonoBehaviour {
 
 					Camera.main.GetComponent<CameraControl>().ChangePivotPoint(new Vector3(0,0, sizeModifier));
 					CheckArrows();
-					startedDrag = false;
 				}
 				else if(currentArrow.transform.parent.gameObject == widthArrows && (sizeModifier == 1 && currentWidth < 29 || sizeModifier == -1 && currentWidth > 4))
 				{
@@ -236,7 +260,6 @@ sealed public class LevelEditor : MonoBehaviour {
 
 					Camera.main.GetComponent<CameraControl>().ChangePivotPoint(new Vector3(sizeModifier,0, 0));
 					CheckArrows();
-					startedDrag = false;
 				}
 			}
 		}
@@ -285,6 +308,9 @@ sealed public class LevelEditor : MonoBehaviour {
 
     private void ClearLevel()
     {
+        ClearTinker();
+        playerX = -1;
+
         for (int x = 0; x < currentWidth; x++)
         {
             for (int y = 0; y < currentLength; y++)
@@ -297,6 +323,15 @@ sealed public class LevelEditor : MonoBehaviour {
                     StartCoroutine(DeleteBlock('M', x, y));
             }
         }
+    }
+
+    private void ClearTinker()
+    {
+        if (selectedMechObject)
+            Destroy(selectedMechObject);
+
+        if (tinkerPanel.activeSelf)
+            tinkerPanel.SetActive(false);
     }
 
 	void CheckArrows()
@@ -428,15 +463,16 @@ sealed public class LevelEditor : MonoBehaviour {
 			}
 		}
 
-		levelData.Add ("id", "L0003");
-		levelData.Add ("name", levelName);
-        levelData.Add ("difficulty", levelDifficulty);
-		levelData.Add ("creator", "Michael");
-		levelData.Add ("colour", RedInput.value.ToString("000") + GreenInput.value.ToString("000") + BlueInput.value.ToString("000"));
-		levelData.Add ("dimensions", (maxX - minX + 1).ToString("00") + (maxY - minY + 1).ToString("00"));
+		levelData.Add("id", "L0003");
+		levelData.Add("name", levelName);
+        levelData.Add("difficulty", levelDifficulty);
+		levelData.Add("creator", "Michael");
+		levelData.Add("colour", RedInput.value.ToString("000") + GreenInput.value.ToString("000") + BlueInput.value.ToString("000"));
+		levelData.Add("dimensions", (maxX - minX + 1).ToString("00") + (maxY - minY + 1).ToString("00"));
         levelData.Add("groundlayer", Crypto.Compress(groundLayer));
         levelData.Add("entitylayer", Crypto.Compress(entityLayer));
         levelData.Add("mechanismlayer", Crypto.Compress(mechanismLayer));
+        levelData.Add("mechanisms", mechanismsText);
 
         return levelData;
 	}
@@ -492,6 +528,7 @@ sealed public class LevelEditor : MonoBehaviour {
         if(action == "Settings")
         {
             settingsPanel.SetActive(true);
+            ClearTinker();
             activePanel = settingsPanel;
             GameObject.Find("Difficulty Field").GetComponent<Text>().text = levelDifficulty;
             GameObject.Find("Level Name Input").GetComponent<InputField>().text = levelName;
@@ -513,6 +550,7 @@ sealed public class LevelEditor : MonoBehaviour {
         else if(action == "Load")
         {
             openLevelPanel.SetActive(true);
+            ClearTinker();
             activePanel = openLevelPanel;
             selectionPanel.SetActive(false);
             Camera.main.GetComponent<CameraControl>().disableRotation = true;
@@ -524,6 +562,33 @@ sealed public class LevelEditor : MonoBehaviour {
             selectionPanel.SetActive(true);
             activePanel = selectionPanel;
             Camera.main.GetComponent<CameraControl>().disableRotation = false;
+        }
+        else if(action == "Start Screenshot")
+        {
+            settingsPanel.SetActive(false);
+            screenshotPanel.SetActive(true);
+            activePanel = screenshotPanel;
+            Camera.main.GetComponent<CameraControl>().disableRotation = false;
+
+            //Temporarily disable objects that would get in the way of the screenshot
+            widthArrows.SetActive(false);
+            lengthArrows.SetActive(false);
+            Camera.main.GetComponent<Grid>().showGrid = false;
+        }
+        else if(action == "Capture Screenshot")
+        {
+            TakeScreenshot();
+            screenshotPanel.SetActive(false);
+            settingsPanel.SetActive(true);
+            activePanel = settingsPanel;
+            Camera.main.GetComponent<CameraControl>().disableRotation = true;
+            settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().color = Color.white;
+            settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().sprite = Sprite.Create(levelImage, new Rect(0, 0, levelImage.width, levelImage.height), new Vector2(0.5f, 0.5f));
+
+            //Re-enable the objects that were disabled to take the screenshot
+            widthArrows.SetActive(true);
+            lengthArrows.SetActive(true);
+            Camera.main.GetComponent<Grid>().showGrid = true;
         }
     }
 
@@ -612,7 +677,7 @@ sealed public class LevelEditor : MonoBehaviour {
     //Change the level details shown to the user based on what level they selected
     public void LevelSelectChange()
     {
-        Texture2D levelImage = null;
+        Texture2D newLevelImage = null;
         string levelPath = "User Levels\\" + GameObject.Find("Open Level Field").GetComponent<Text>().text;
         Dictionary<string, object> levelData = Json.Deserialize(Crypto.Decrypt(System.IO.File.ReadAllText(levelPath + ".lv"))) as Dictionary<string, object>;
 
@@ -622,10 +687,10 @@ sealed public class LevelEditor : MonoBehaviour {
             //Display level image to user if one exists
             if (System.IO.File.Exists(levelPath + " Image.png"))
             {
-                levelImage = new Texture2D(256, 128);
-                levelImage.LoadImage(System.IO.File.ReadAllBytes(levelPath + " Image.png"));
+                newLevelImage = new Texture2D(360, 240);
+                newLevelImage.LoadImage(System.IO.File.ReadAllBytes(levelPath + " Image.png"));
                 levelInformation.FindChild("Open Level Image").GetComponent<Image>().color = Color.white;
-                levelInformation.FindChild("Open Level Image").GetComponent<Image>().sprite = Sprite.Create(levelImage, new Rect(0, 0, levelImage.width, levelImage.height), new Vector2(0.5f, 0.5f));
+                levelInformation.FindChild("Open Level Image").GetComponent<Image>().sprite = Sprite.Create(newLevelImage, new Rect(0, 0, newLevelImage.width, newLevelImage.height), new Vector2(0.5f, 0.5f));
             }
             else
             {
@@ -672,10 +737,10 @@ sealed public class LevelEditor : MonoBehaviour {
         messagePanel.SetActive(false);
     }
     
-    private void openTinker()
+    private void OpenTinker()
     {
         tinkerPanel.SetActive(true);
-        tinkerPanel.transform.FindChild("Group Dropdown").GetComponent<Dropdown>().value = selectedMechanism.group - 1;
+        tinkerPanel.transform.FindChild("Group Dropdown").GetComponent<Dropdown>().value = selectedMechanism.group;
 
         if(tinkerPanel.transform.FindChild("Chosen Mechanism").childCount > 0)
             Destroy(tinkerPanel.transform.FindChild("Chosen Mechanism").GetChild(0).gameObject);
@@ -683,16 +748,9 @@ sealed public class LevelEditor : MonoBehaviour {
         currentObject = Instantiate(GameData.MechanismTypes[selectedMechanism.ID], tinkerPanel.transform.FindChild("Chosen Mechanism").position, Quaternion.Euler(300,180,135)) as GameObject;
         currentObject.transform.parent = tinkerPanel.transform.FindChild("Chosen Mechanism");
         currentObject.transform.localScale = new Vector3(1,1,1);
+        currentObject.GetComponent<Renderer>().material.mainTexture = Resources.Load("Textures\\" + GameData.MechanismTypes[selectedMechanism.ID].name + selectedMechanism.GetComponent<Mechanism>().group.ToString()) as Texture;
 
-        //TODO: This code sucks, pls make better at some point!!!
-        if (selectedMechanism.ID == 'A' || selectedMechanism.ID == 'C' || selectedMechanism.ID == 'E')
-        {
-            tinkerPanel.transform.FindChild("Mechanism Name").GetComponent<Text>().text = "Button";
-        }
-        else if(selectedMechanism.ID == 'B' || selectedMechanism.ID == 'D' || selectedMechanism.ID == 'F')
-        {
-            tinkerPanel.transform.FindChild("Mechanism Name").GetComponent<Text>().text = "Door";
-        }
+        tinkerPanel.transform.FindChild("Mechanism Name").GetComponent<Text>().text = GameData.MechanismTypes[selectedMechanism.ID].name;
 
         if (selectedMechanism.receivesInput)
         {
@@ -703,6 +761,90 @@ sealed public class LevelEditor : MonoBehaviour {
         {
             tinkerStartDropdown.SetActive(false);
         }
+    }
+
+    public void TinkerGroupChanged(int group)
+    {
+        selectedMechanism.group = (byte)(tinkerPanel.transform.FindChild("Group Dropdown").GetComponent<Dropdown>().value);
+        selectedMechanism.GetComponent<Renderer>().material.mainTexture = Resources.Load("Textures\\" + GameData.MechanismTypes[selectedMechanism.ID].name + selectedMechanism.GetComponent<Mechanism>().group.ToString()) as Texture;
+        tinkerPanel.transform.FindChild("Chosen Mechanism").GetChild(0).GetComponent<Renderer>().material.mainTexture = Resources.Load("Textures\\" + GameData.MechanismTypes[selectedMechanism.ID].name + selectedMechanism.GetComponent<Mechanism>().group.ToString()) as Texture;
+    }
+
+    public void TakeScreenshot()
+    {
+        RenderTexture rt = new RenderTexture(720,480,24);
+        Camera.main.targetTexture = rt;
+        levelImage = new Texture2D(720, 480, TextureFormat.RGB24, false);
+
+        //Take the screenshot
+        Camera.main.Render();
+
+        //Now save the screenshot to a variable and clean up
+        RenderTexture.active = rt;
+        levelImage.ReadPixels(new Rect(0, 0, 720, 480), 0, 0);
+        Camera.main.targetTexture = null;
+        RenderTexture.active = null;
+        Destroy(rt);
+        byte[] bytes = levelImage.EncodeToPNG();
+        string filename = "testPic.png";
+        System.IO.File.WriteAllBytes(filename, bytes);
+    }
+
+    public void ShowRequirements(bool upload)
+    {
+        string requirements = "";
+        int lineCount = 0;
+        bool playerExists = false;
+        bool finishExists = false;
+
+        for(int y = 0; y < currentLength; y++)
+        {
+            for(int x = 0; x < currentWidth; x++)
+            {
+                if (groundLayout[x, y] == 'X')
+                    finishExists = true;
+                if (entityLayout[x, y] == 'P')
+                    playerExists = true;
+            }
+        }
+
+        if (!finishExists)
+        {
+            requirements += "- There must be at least one finish block\n";
+            lineCount += 2;
+        }
+        if (!playerExists)
+        {
+            requirements += "- There must be a player entity\n";
+            lineCount += 2;
+        }
+        if (upload)
+        {
+            if (levelName == "")
+            {
+                requirements += "- You must set a level name in settings\n";
+                lineCount += 2;
+            }
+            if (!levelCompleted)
+            {
+                requirements += "- You must complete the level yourself before uploading it\n";
+                lineCount += 3;
+            }
+            if (levelImage == null)
+            {
+                requirements += "- You must set a level image in settings\n";
+                lineCount += 2;
+            }       
+        }
+
+        requirementsPanel.SetActive(true);
+        requirementsPanel.GetComponent<RectTransform>().sizeDelta = new Vector2(166, 8 + (16 * lineCount));
+        requirementsPanel.transform.GetChild(0).GetComponent<Text>().text = requirements;
+    }
+
+    public void HideRequirements()
+    {
+        requirementsPanel.SetActive(false);
     }
 
     //Called when the user wishes to amend a previously created level
@@ -738,8 +880,14 @@ sealed public class LevelEditor : MonoBehaviour {
     {
         Level levelToLoad = LevelLoader.LoadFromJSON(levelData, -1);
         levelColor = levelToLoad.BackgroundColor;
+
+        Debug.Log(levelColor.r.ToString());
+        Debug.Log(levelColor.g.ToString());
+        Debug.Log(levelColor.b.ToString());
+
         levelName = levelToLoad.Name;
         levelDifficulty = levelToLoad.Difficulty;
+        mechanisms = levelToLoad.MechanismLayout;
 
         if (levelToLoad.Width < 4)
             currentWidth = 4;
@@ -757,9 +905,16 @@ sealed public class LevelEditor : MonoBehaviour {
             {
                 if(levelToLoad.GroundLayout[x,y] != 'Z')
                     groundLayout[x, y] = levelToLoad.GroundLayout[x, y];
-                if(levelToLoad.EntityLayout[x,y] != null)
+                if(levelToLoad.EntityLayout[x, y] != null)
+                {
+                    if (levelToLoad.EntityLayout[x, y].ID == 'P')
+                    {
+                        playerX = x;
+                        playerY = y;
+                    }
                     entityLayout[x, y] = levelToLoad.EntityLayout[x, y].ID;
-                if(levelToLoad.MechanismLayout[x, y] != null)
+                }
+                if (levelToLoad.MechanismLayout[x, y] != null)
                     mechanismLayout[x, y] = levelToLoad.MechanismLayout[x, y].ID;
                 
 				Camera.main.GetComponent<Grid>().SetGridSize((currentWidth * 2) - 1, (currentLength * 2) - 1);
@@ -768,7 +923,6 @@ sealed public class LevelEditor : MonoBehaviour {
 				CheckArrows();
             }
         }
-
         Camera.main.GetComponent<CameraControl>().SetPivotPoint(new Vector3(currentWidth - 1, 0, currentLength - 1));
     }
 }

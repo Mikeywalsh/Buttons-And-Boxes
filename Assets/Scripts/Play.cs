@@ -94,30 +94,6 @@ sealed public class Play : MonoBehaviour {
                 moved = true;
             }
         }
-
-        //if (!player.IsMoving && currentLevel.InputCooldown - Time.time < 0)
-        //{
-        //    if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
-        //    {
-        //        currentLevel.MoveEntity(player, GetMovementDirection(KeyCode.W), true);
-        //        StartCoroutine(InputCooldown(0.3f));
-        //    }
-        //    else if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
-        //    {
-        //        currentLevel.MoveEntity(player, GetMovementDirection(KeyCode.S), true);
-        //        StartCoroutine(InputCooldown(0.3f));
-        //    }
-        //    else if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
-        //    {
-        //        currentLevel.MoveEntity(player, GetMovementDirection(KeyCode.A), true);
-        //        StartCoroutine(InputCooldown(0.3f));
-        //    }
-        //    else if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
-        //    {
-        //        currentLevel.MoveEntity(player, GetMovementDirection(KeyCode.D), true);
-        //        StartCoroutine(InputCooldown(0.3f));
-        //    }
-        //}
         if (Input.GetKey(KeyCode.Q))
 			Camera.main.transform.RotateAround(player.transform.position, Vector3.up, 60f * Time.deltaTime);
 		if(Input.GetKey(KeyCode.E))

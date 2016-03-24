@@ -41,6 +41,8 @@ sealed public class LevelLoader : MonoBehaviour {
 			throw new Exception("Entity layout not present in level file!");
 		if(!levelData.ContainsKey("mechanismlayer"))
 			throw new Exception("Mechanism layout not present in level file!");
+        if (!levelData.ContainsKey("mechanisms"))
+            throw new Exception("Mechanism data not present in level file!");
         #endregion
 
         string name = (string)levelData["name"];
@@ -51,13 +53,15 @@ sealed public class LevelLoader : MonoBehaviour {
 		string rawGroundLayer = Crypto.Decompress((string)levelData["groundlayer"]);
 		string rawEntityLayer = Crypto.Decompress((string)levelData["entitylayer"]);
 		string rawMechanismLayer = Crypto.Decompress((string)levelData["mechanismlayer"]);
+        string rawMechanismData = (string)levelData["mechanisms"];
 
-		char[,] groundLayer = new char[levelWidth, levelHeight];
+        char[,] groundLayer = new char[levelWidth, levelHeight];
 		char[,] entityLayer = new char[levelWidth, levelHeight];
 		char[,] mechanismLayer = new char[levelWidth, levelHeight];
 		Entity[,] entities = new Entity[levelWidth, levelHeight];
 		Mechanism[,] mechanisms = new Mechanism[levelWidth, levelHeight];
-		int[] mechanismInputs = new int[2]{0,0};
+		int[] mechanismInputs = new int[3]{0,0,0};
+        int mechanismCount = 0;
 
 		GameObject currentObject;
 		int filePlayerCount = 0;
@@ -77,11 +81,18 @@ sealed public class LevelLoader : MonoBehaviour {
 		if(((string)levelData["colour"]).Length != 9)
 			throw new Exception("Invalid Background Colour");
 
+        if (rawMechanismData.Length != rawMechanismLayer.Replace("Z", "").Length * 2)
+            throw new Exception("Invalid Mechanism Data");
+
 		if(rawGroundLayer.Length != levelHeight * levelWidth || rawEntityLayer.Length != levelHeight * levelWidth || rawMechanismLayer.Length != levelHeight * levelWidth)
 			throw new Exception("Invalid Block Count");
-		#endregion
+        #endregion
 
-		Camera.main.GetComponent<CameraControl>().ChangeBackgroundColour(backgroundColor);
+        //Change the background color instantly if loading into level edior, or tween it if not
+        if (Application.loadedLevel == 3)
+            Camera.main.backgroundColor = backgroundColor;
+        else
+		    Camera.main.GetComponent<CameraControl>().ChangeBackgroundColour(backgroundColor);
 
 		for(int y = 0; y < levelHeight; y++)
 		{
@@ -130,7 +141,13 @@ sealed public class LevelLoader : MonoBehaviour {
                     currentObject.GetComponent<Block>().Spawn(x, mechanismLayer[x, y]);
 					mechanisms[x,y] = currentObject.GetComponent<Mechanism>();
 
-					for(int g = 0; g < 2; g++)
+                    //Setup mechanism data from level file                    
+                    currentObject.GetComponent<Mechanism>().group = byte.Parse(rawMechanismData[mechanismCount * 2].ToString());
+                    if(currentObject.GetComponent<Mechanism>().receivesInput)
+                        currentObject.GetComponent<Mechanism>().startOpen = (byte.Parse(rawMechanismData[(mechanismCount * 2) + 1].ToString()) == 0? false : true);
+                    currentObject.GetComponent<Renderer>().material.mainTexture = Resources.Load("Textures\\" + GameData.MechanismTypes[mechanismLayer[x, y]].name + currentObject.GetComponent<Mechanism>().group.ToString()) as Texture;
+
+                    for (int g = 0; g < 3; g++)
 					{
 						if(!mechanisms[x,y].receivesInput && mechanisms[x,y].group == g)
 							mechanismInputs[g] += 1;
@@ -147,6 +164,8 @@ sealed public class LevelLoader : MonoBehaviour {
 
 					if(mechanisms[x,y].receivesInput && entityLayer[x,y] != 'Z' && !entities[x,y].moveable)
 						throw new Exception("Only moveable entities can spawn inside mechanisms that receive input");
+
+                    mechanismCount++;
 				}
 			}
 		}
