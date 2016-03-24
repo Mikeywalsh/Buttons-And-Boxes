@@ -4,7 +4,6 @@ using System.IO;
 using System.Collections.Generic;
 using MiniJSON;
 
-<<<<<<< HEAD
 //Series of manually called functions which change level files to newer versions and human readable formats
 public class TempLevelUpdater : MonoBehaviour {
     
@@ -55,16 +54,10 @@ public class TempLevelUpdater : MonoBehaviour {
     void CompressRaw()
     {
         //List<object> allLevels = Json.Deserialize(Crypto.Decrypt(File.ReadAllText("LevelData"))) as List<object>;
-=======
-public class TempLevelUpdater : MonoBehaviour {
-    //Temporary script used to compress and encrypt levels for the main game when they're finished
-	void Start () {
->>>>>>> origin/master
         List<object> allLevels = Json.Deserialize(File.ReadAllText("LevelData")) as List<object>;
 
         for (int i = 0; i < allLevels.Count; i++)
         {
-<<<<<<< HEAD
             ((Dictionary<string, object>)allLevels[i])["groundlayer"] = Crypto.Compress((string)((Dictionary<string, object>)allLevels[i])["groundlayer"]);
             ((Dictionary<string, object>)allLevels[i])["entitylayer"] = Crypto.Compress((string)((Dictionary<string, object>)allLevels[i])["entitylayer"]);
             ((Dictionary<string, object>)allLevels[i])["mechanismlayer"] = Crypto.Compress((string)((Dictionary<string, object>)allLevels[i])["mechanismlayer"]);
@@ -111,14 +104,3 @@ public class TempLevelUpdater : MonoBehaviour {
         File.WriteAllText("LevelDataRAW", Json.Serialize(allLevels));
     }
 }
-=======
-            ((Dictionary<string, object>)allLevels[i])["groundLayer"] = Crypto.Compress((string)((Dictionary<string, object>)allLevels[i])["groundLayer"]);
-            ((Dictionary<string, object>)allLevels[i])["entityLayer"] = Crypto.Compress((string)((Dictionary<string, object>)allLevels[i])["entityLayer"]);
-            ((Dictionary<string, object>)allLevels[i])["mechanismLayer"] = Crypto.Compress((string)((Dictionary<string, object>)allLevels[i])["mechanismLayer"]);
-        }
-
-        File.WriteAllText("Level_Data", Crypto.Encrypt(Json.Serialize(allLevels)));
-
-    }
-}
->>>>>>> origin/master

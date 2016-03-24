@@ -21,6 +21,8 @@ sealed public class LevelEditor : MonoBehaviour {
     public GameObject messageText;
     public GameObject errorText;
     public GameObject tinkerStartDropdown;
+    public GameObject playButton;
+    public GameObject uploadButton;
 
     //Level Settings Objects
     public Transform levelInformation;
@@ -44,7 +46,8 @@ sealed public class LevelEditor : MonoBehaviour {
 	private GameObject currentArrow;
     private GameObject activePanel;
     private Transform currentButton;
-    private Texture2D levelImage;
+    private Sprite levelSprite;
+    private Sprite lastLevelSprite;
 	private Plane ground = new Plane(Vector3.up, Vector3.zero);
 	private Vector3 mouseVector;
 	private float hitDist;
@@ -67,6 +70,8 @@ sealed public class LevelEditor : MonoBehaviour {
 	void Start () {
         sessionID = "";
         playerX = -1;
+        levelSprite = questionMark;
+        lastLevelSprite = questionMark;
         GameData.Initialize();
 
         if (loadingLevel)
@@ -216,12 +221,10 @@ sealed public class LevelEditor : MonoBehaviour {
                 if (selectedLayer == 'M' && entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != null)
                     return;
 
-<<<<<<< HEAD
+                //If deleting a player entity, reset the player position variable
                 if(selectedLayer == 'E' && entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == 'P')
                     playerX = -1;
 
-=======
->>>>>>> origin/master
                 StartCoroutine(DeleteBlock(selectedLayer, (int)(mouseVector.x / 2), (int)(mouseVector.z / 2)));
 			}
 			#endregion
@@ -313,6 +316,7 @@ sealed public class LevelEditor : MonoBehaviour {
     {
         ClearTinker();
         playerX = -1;
+        StartCoroutine(DisablePlayUpload());
 
         for (int x = 0; x < currentWidth; x++)
         {
@@ -326,6 +330,15 @@ sealed public class LevelEditor : MonoBehaviour {
                     StartCoroutine(DeleteBlock('M', x, y));
             }
         }
+    }
+
+    private IEnumerator DisablePlayUpload()
+    {
+        playButton.SetActive(false);
+        uploadButton.SetActive(false);
+        yield return new WaitForSeconds(2.5f);
+        playButton.SetActive(true);
+        uploadButton.SetActive(true);
     }
 
     private void ClearTinker()
@@ -489,6 +502,9 @@ sealed public class LevelEditor : MonoBehaviour {
 
     public void TestLevel()
     {
+        if (requirementsPanel.activeSelf)
+            return;
+
         LevelLoader.levelToLoad = -1;
         LevelLoader.JSONToLoad = levelAsJSON();
         Application.LoadLevel(1);
@@ -510,6 +526,7 @@ sealed public class LevelEditor : MonoBehaviour {
         Camera.main.backgroundColor = GameObject.Find("Level Color Select").GetComponent<Image>().color;
         levelColor = (Color32)Camera.main.backgroundColor;
         levelDifficulty = GameObject.Find("Difficulty Field").GetComponent<Text>().text;
+        lastLevelSprite = levelSprite;
 
         LevelActionSelect("Back");
     }
@@ -522,6 +539,14 @@ sealed public class LevelEditor : MonoBehaviour {
         GreenInput.value = levelColor.g;
         BlueInput.value = levelColor.b;
         GameObject.Find("Difficulty Field").GetComponent<Text>().text = levelDifficulty;
+
+        if(lastLevelSprite == questionMark)
+            settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().color = Color.black;
+        else
+            settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().color = Color.white;
+
+        settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().sprite = lastLevelSprite;
+        levelSprite = lastLevelSprite;
 
         LevelActionSelect("Back");
     }
@@ -549,6 +574,7 @@ sealed public class LevelEditor : MonoBehaviour {
         else if(action == "Save")
         {
             SaveLevel(levelAsJSON());
+            System.IO.File.WriteAllBytes("User Levels\\" + levelName + " Image.png", levelSprite.texture.EncodeToPNG());
         }
         else if(action == "Load")
         {
@@ -586,7 +612,7 @@ sealed public class LevelEditor : MonoBehaviour {
             activePanel = settingsPanel;
             Camera.main.GetComponent<CameraControl>().disableRotation = true;
             settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().color = Color.white;
-            settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().sprite = Sprite.Create(levelImage, new Rect(0, 0, levelImage.width, levelImage.height), new Vector2(0.5f, 0.5f));
+            settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().sprite = levelSprite;
 
             //Re-enable the objects that were disabled to take the screenshot
             widthArrows.SetActive(true);
@@ -777,7 +803,7 @@ sealed public class LevelEditor : MonoBehaviour {
     {
         RenderTexture rt = new RenderTexture(720,480,24);
         Camera.main.targetTexture = rt;
-        levelImage = new Texture2D(720, 480, TextureFormat.RGB24, false);
+        Texture2D levelImage = new Texture2D(720, 480, TextureFormat.RGB24, false);
 
         //Take the screenshot
         Camera.main.Render();
@@ -788,9 +814,9 @@ sealed public class LevelEditor : MonoBehaviour {
         Camera.main.targetTexture = null;
         RenderTexture.active = null;
         Destroy(rt);
-        byte[] bytes = levelImage.EncodeToPNG();
-        string filename = "testPic.png";
-        System.IO.File.WriteAllBytes(filename, bytes);
+        levelImage.LoadImage(levelImage.EncodeToPNG());
+        lastLevelSprite = levelSprite;
+        levelSprite = Sprite.Create(levelImage, new Rect(0, 0, levelImage.width, levelImage.height), new Vector2(0.5f, 0.5f));
     }
 
     public void ShowRequirements(bool upload)
@@ -833,12 +859,15 @@ sealed public class LevelEditor : MonoBehaviour {
                 requirements += "- You must complete the level yourself before uploading it\n";
                 lineCount += 3;
             }
-            if (levelImage == null)
+            if (levelSprite == questionMark)
             {
                 requirements += "- You must set a level image in settings\n";
                 lineCount += 2;
             }       
         }
+
+        if (requirements == "")
+            return;
 
         requirementsPanel.SetActive(true);
         requirementsPanel.GetComponent<RectTransform>().sizeDelta = new Vector2(166, 8 + (16 * lineCount));
