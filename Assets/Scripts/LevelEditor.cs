@@ -216,9 +216,12 @@ sealed public class LevelEditor : MonoBehaviour {
                 if (selectedLayer == 'M' && entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != null)
                     return;
 
+<<<<<<< HEAD
                 if(selectedLayer == 'E' && entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == 'P')
                     playerX = -1;
 
+=======
+>>>>>>> origin/master
                 StartCoroutine(DeleteBlock(selectedLayer, (int)(mouseVector.x / 2), (int)(mouseVector.z / 2)));
 			}
 			#endregion
