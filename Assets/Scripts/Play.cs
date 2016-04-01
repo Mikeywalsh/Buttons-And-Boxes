@@ -56,6 +56,7 @@ sealed public class Play : MonoBehaviour {
             if (currentLevel.LevelID == -1)
             {
                 LevelEditor.loadingLevel = true;
+                LevelEditor.loadingWonLevel = levelWon;
 				StartCoroutine(StartLevelWait(-1));
             }
             else
@@ -86,22 +87,24 @@ sealed public class Play : MonoBehaviour {
             moved = false;
         }
 
-        if (Time.time - clockTimer >= 0.05f && !player.IsMoving)
+        if (Time.time - clockTimer >= 0.05f && !player.IsMoving && inputReady)
         {
             if (dir[0] != 0 || dir[1] != 0)
             {
                 currentLevel.MoveEntity(player, dir, true, clockCycle);
+                StartCoroutine(InputCooldown(0.3f));
                 moved = true;
             }
         }
+
         if (Input.GetKey(KeyCode.Q))
 			Camera.main.transform.RotateAround(player.transform.position, Vector3.up, 60f * Time.deltaTime);
 		if(Input.GetKey(KeyCode.E))
 			Camera.main.transform.RotateAround(player.transform.position, Vector3.up, -60f * Time.deltaTime);
 		if(Input.GetAxis("Mouse ScrollWheel") > 0 || Input.GetKey(KeyCode.Equals) || Input.GetKey(KeyCode.KeypadPlus))
-			cameraZoom = Mathf.Clamp(cameraZoom - (22.5f * Time.deltaTime), 15f, 35f);
+			cameraZoom = Mathf.Clamp(cameraZoom - (60 * Time.deltaTime), 15f, 35f);
 		else if(Input.GetAxis("Mouse ScrollWheel") < 0 || Input.GetKey(KeyCode.Minus) || Input.GetKey(KeyCode.KeypadMinus))
-			cameraZoom = Mathf.Clamp(cameraZoom + (22.5f * Time.deltaTime), 15f, 35f);
+			cameraZoom = Mathf.Clamp(cameraZoom + (60 * Time.deltaTime), 15f, 35f);
 
 		if(Input.GetKey(KeyCode.R))
 			RestartLevel();

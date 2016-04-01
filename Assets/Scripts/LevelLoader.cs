@@ -27,9 +27,9 @@ sealed public class LevelLoader : MonoBehaviour {
 			throw new Exception("ID not present in level file!");
 		if(!levelData.ContainsKey("name"))
 			throw new Exception("Name not present in level file!");
-        if (!levelData.ContainsKey("difficulty"))
+        if(!levelData.ContainsKey("difficulty"))
             throw new Exception("Difficulty not present in level file!");
-        if (!levelData.ContainsKey("creator"))
+        if(!levelData.ContainsKey("creator"))
 			throw new Exception("creator not present in level file!");
 		if(!levelData.ContainsKey("colour"))
 			throw new Exception("Colour not present in level file!");
@@ -41,7 +41,7 @@ sealed public class LevelLoader : MonoBehaviour {
 			throw new Exception("Entity layout not present in level file!");
 		if(!levelData.ContainsKey("mechanismlayer"))
 			throw new Exception("Mechanism layout not present in level file!");
-        if (!levelData.ContainsKey("mechanisms"))
+        if(!levelData.ContainsKey("mechanisms"))
             throw new Exception("Mechanism data not present in level file!");
         #endregion
 

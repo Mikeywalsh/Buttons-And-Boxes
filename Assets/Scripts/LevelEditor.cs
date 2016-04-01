@@ -6,6 +6,8 @@ using MiniJSON;
 
 sealed public class LevelEditor : MonoBehaviour {
     public static bool loadingLevel;
+    public static bool loadingWonLevel;
+    public static Texture2D testedLevelImage;
 
     //Level Editor Objects
 	public GameObject levelObjects;
@@ -15,10 +17,12 @@ sealed public class LevelEditor : MonoBehaviour {
     public GameObject settingsPanel;
     public GameObject openLevelPanel;
     public GameObject tinkerPanel;
+    public GameObject uploadPanel;
     public GameObject requirementsPanel;
     public GameObject screenshotPanel;
     public GameObject messagePanel;
     public GameObject messageText;
+    public GameObject notificationText;
     public GameObject errorText;
     public GameObject tinkerStartDropdown;
     public GameObject playButton;
@@ -34,7 +38,6 @@ sealed public class LevelEditor : MonoBehaviour {
     public Sprite questionMark;
     public string levelName;
     public string levelDifficulty;
-    public bool levelCompleted;
 
     private int playerX;
     private int playerY;
@@ -53,6 +56,7 @@ sealed public class LevelEditor : MonoBehaviour {
 	private float hitDist;
 	private bool validChoice;
 	private bool cursorOOB;
+    private bool levelComplete;
 
 	private int currentWidth;
 	private int currentLength;
@@ -74,8 +78,14 @@ sealed public class LevelEditor : MonoBehaviour {
         lastLevelSprite = questionMark;
         GameData.Initialize();
 
+        SelectionSwitched("GF#Floor");
+        activePanel = settingsPanel;
+        levelColor = new Color32(162, 210, 190, 255);
+        levelDifficulty = "Easy";
+
         if (loadingLevel)
         {
+            levelComplete = loadingWonLevel;
             LoadLevel(LevelLoader.JSONToLoad);
             loadingLevel = false;
         }
@@ -85,10 +95,6 @@ sealed public class LevelEditor : MonoBehaviour {
             currentLength = 13;
             Camera.main.GetComponent<CameraControl>().SetPivotPoint(new Vector3(currentWidth - 1, 0, currentLength - 1));
         }
-        SelectionSwitched("GF#Floor");
-        activePanel = settingsPanel;
-        levelColor = new Color32(162,210,190,255);
-        levelDifficulty = "Easy";
 	}
 
 	void Update () {
@@ -100,9 +106,6 @@ sealed public class LevelEditor : MonoBehaviour {
 
         if (Input.GetKeyDown(KeyCode.O))
 			levelAsJSON();
-
-		if(Input.GetKeyDown(KeyCode.Y))
-			StartCoroutine(UploadLevel(System.IO.File.ReadAllText("phpTest")));
 
 		if(Input.GetKeyDown(KeyCode.U))
 			StartCoroutine(GetUserFromSession());
@@ -134,7 +137,10 @@ sealed public class LevelEditor : MonoBehaviour {
 			if((int)(mouseVector.x / 2) >= 0 && (int)(mouseVector.z / 2) >= 0 && (int)(mouseVector.x / 2) < currentWidth && (int)(mouseVector.z / 2) < currentLength)
 			{
 				cursorOOB = false;
-				if(selectedLayer == 'G' && groundLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == null || selectedLayer == 'E' && entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == null && groundLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != null && mechanismLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == null || selectedLayer == 'M' && selectedBlock != 'T' && mechanismLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == null && groundLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != null && entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == null || selectedLayer == 'M' && selectedBlock == 'T' && mechanismLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != null)
+				if(selectedLayer == 'G' && groundLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == null ||
+                   selectedLayer == 'E' && entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == null && groundLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != null && groundLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != 'P' && mechanismLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == null && groundLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != 'X' ||
+                   selectedLayer == 'M' && selectedBlock != 'T' && mechanismLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == null && groundLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != null && groundLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != 'P' && entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == null && groundLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != 'X' ||
+                   selectedLayer == 'M' && selectedBlock == 'T' && mechanismLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] != null)
 				{
 					validChoice = true;
 				}
@@ -168,13 +174,15 @@ sealed public class LevelEditor : MonoBehaviour {
 				{
 					currentObject = Instantiate(GameData.GroundTypes[selectedBlock], mouseVector - new Vector3(0, 1, 0), Quaternion.identity) as GameObject;
 					groundLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] = selectedBlock;
-				}
+                    levelComplete = false;
+                }
 				else if(selectedLayer == 'E')
 				{
 					currentObject = Instantiate(GameData.EntityTypes[selectedBlock], mouseVector + new Vector3(0, 1, 0), Quaternion.identity) as GameObject;
 					entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] = selectedBlock;
+                    levelComplete = false;
 
-                    if(selectedBlock == 'P')
+                    if (selectedBlock == 'P')
                     {
                         if(playerX != -1)
                             StartCoroutine(DeleteBlock('E', playerX, playerY));
@@ -190,6 +198,7 @@ sealed public class LevelEditor : MonoBehaviour {
                         currentObject = Instantiate(GameData.MechanismTypes[selectedBlock], mouseVector + new Vector3(0, 1, 0), Quaternion.Euler(new Vector3(-90, 0, 0))) as GameObject;
                         mechanismLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] = selectedBlock;
                         mechanisms[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] = currentObject.GetComponent<Mechanism>();
+                        levelComplete = false;
                     }
                     else
                     {
@@ -222,7 +231,7 @@ sealed public class LevelEditor : MonoBehaviour {
                     return;
 
                 //If deleting a player entity, reset the player position variable
-                if(selectedLayer == 'E' && entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == 'P')
+                if (selectedLayer == 'E' && entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] == 'P')
                     playerX = -1;
 
                 StartCoroutine(DeleteBlock(selectedLayer, (int)(mouseVector.x / 2), (int)(mouseVector.z / 2)));
@@ -268,7 +277,8 @@ sealed public class LevelEditor : MonoBehaviour {
 					CheckArrows();
 				}
 			}
-		}
+            levelComplete = false;
+        }
 		#endregion
 	}
 
@@ -296,13 +306,14 @@ sealed public class LevelEditor : MonoBehaviour {
             if (levelObjects.transform.FindChild(layer + x.ToString("00") + y.ToString("00")).GetComponent<Block>().Despawning)
                 yield break;
 
-			levelObjects.transform.FindChild(layer + x.ToString("00") + y.ToString("00")).GetComponent<Block>().Despawn();
+            levelComplete = false;
+            levelObjects.transform.FindChild(layer + x.ToString("00") + y.ToString("00")).GetComponent<Block>().Despawn();
 			yield return new WaitForSeconds(0.5f);
 			if(layer == 'G')
 				groundLayout[x,y] = null;
-			if(layer == 'E')
+			else if(layer == 'E')
 				entityLayout[x,y] = null;
-			if(layer == 'M')
+			else if(layer == 'M')
 				mechanismLayout[x,y] = null;
 		}
 		else
@@ -483,7 +494,7 @@ sealed public class LevelEditor : MonoBehaviour {
 		levelData.Add("name", levelName);
         levelData.Add("difficulty", levelDifficulty);
 		levelData.Add("creator", "Michael");
-		levelData.Add("colour", RedInput.value.ToString("000") + GreenInput.value.ToString("000") + BlueInput.value.ToString("000"));
+		levelData.Add("colour", levelColor.r.ToString("000") + levelColor.g.ToString("000") + levelColor.b.ToString("000"));
 		levelData.Add("dimensions", (maxX - minX + 1).ToString("00") + (maxY - minY + 1).ToString("00"));
         levelData.Add("groundlayer", Crypto.Compress(groundLayer));
         levelData.Add("entitylayer", Crypto.Compress(entityLayer));
@@ -496,8 +507,8 @@ sealed public class LevelEditor : MonoBehaviour {
     private void SaveLevel(Dictionary<string, object> levelData)
     {
         string serialized = Json.Serialize(levelData);
-
         System.IO.File.WriteAllText("User Levels\\" + levelName + ".lv", Crypto.Encrypt(serialized));
+        SetNotification("Level \"" + levelName + "\"" + " saved successfully!");
     }
 
     public void TestLevel()
@@ -524,7 +535,7 @@ sealed public class LevelEditor : MonoBehaviour {
     {
         levelName = GameObject.Find("Level Name Input").GetComponent<InputField>().text;
         Camera.main.backgroundColor = GameObject.Find("Level Color Select").GetComponent<Image>().color;
-        levelColor = (Color32)Camera.main.backgroundColor;
+        levelColor = GameObject.Find("Level Color Select").GetComponent<Image>().color;
         levelDifficulty = GameObject.Find("Difficulty Field").GetComponent<Text>().text;
         lastLevelSprite = levelSprite;
 
@@ -539,13 +550,6 @@ sealed public class LevelEditor : MonoBehaviour {
         GreenInput.value = levelColor.g;
         BlueInput.value = levelColor.b;
         GameObject.Find("Difficulty Field").GetComponent<Text>().text = levelDifficulty;
-
-        if(lastLevelSprite == questionMark)
-            settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().color = Color.black;
-        else
-            settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().color = Color.white;
-
-        settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().sprite = lastLevelSprite;
         levelSprite = lastLevelSprite;
 
         LevelActionSelect("Back");
@@ -566,6 +570,13 @@ sealed public class LevelEditor : MonoBehaviour {
             BlueInput.value = levelColor.b;
             Camera.main.GetComponent<CameraControl>().disableRotation = true;
             selectionPanel.SetActive(false);
+
+            if (levelSprite == questionMark)
+                settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().color = Color.black;
+            else
+                settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().color = Color.white;
+
+            settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().sprite = levelSprite;
         }
         else if(action == "Exit")
         {
@@ -590,6 +601,16 @@ sealed public class LevelEditor : MonoBehaviour {
             activePanel.SetActive(false);
             selectionPanel.SetActive(true);
             activePanel = selectionPanel;
+            Camera.main.GetComponent<CameraControl>().disableRotation = false;
+        }
+        else if(action == "Upload")
+        {
+            if (requirementsPanel.activeSelf)
+                return;
+
+            selectionPanel.SetActive(false);
+            uploadPanel.SetActive(true);
+            activePanel = uploadPanel;
             Camera.main.GetComponent<CameraControl>().disableRotation = false;
         }
         else if(action == "Start Screenshot")
@@ -655,40 +676,41 @@ sealed public class LevelEditor : MonoBehaviour {
         RedInput.transform.parent.GetComponent<Image>().color = new Color(id == "R" ? colourVal / 255f : RedInput.transform.parent.GetComponent<Image>().color.r, id == "G" ? colourVal / 255f : RedInput.transform.parent.GetComponent<Image>().color.g, id == "B" ? colourVal / 255f : RedInput.transform.parent.GetComponent<Image>().color.b);
     }
 
-    IEnumerator UploadLevel(string JSONData)
-	{
-		byte[] levelData = System.Text.Encoding.UTF8.GetBytes(JSONData);
-		WWWForm form = new WWWForm();
+    //Will get back to this when i have figured out how to implement sessions properly
+    //IEnumerator UploadLevel(string JSONData)
+	//{
+	//	byte[] levelData = System.Text.Encoding.UTF8.GetBytes(JSONData);
+	//	WWWForm form = new WWWForm();
 
-		form.AddField("action", "upload");
-		form.AddField("user", "Walshy");
-		form.AddBinaryData("upfile", levelData, "L0001", "application/octet-stream");
+	//	form.AddField("action", "upload");
+	//	form.AddField("user", "Walshy");
+	//	form.AddBinaryData("upfile", levelData, "L0001", "application/octet-stream");
 
-		if(sessionID != "")
-			form.AddField("SessionID", sessionID);
+	//	if(sessionID != "")
+	//		form.AddField("SessionID", sessionID);
 
-		WWW w = new WWW("127.0.0.1/ButtonsAndBoxes/uploadLevel.php", form);
+	//	WWW w = new WWW("127.0.0.1/ButtonsAndBoxes/uploadLevel.php", form);
 
-		yield return w;
-		if(w.error != null)
-			Debug.Log(w.error);
-		else
-			Debug.Log(w.text);
+	//	yield return w;
+	//	if(w.error != null)
+	//		Debug.Log(w.error);
+	//	else
+	//		Debug.Log(w.text);
 
-		if(w.responseHeaders.ContainsKey("SET-COOKIE"))
-		{
-			Debug.Log(w.responseHeaders ["SET-COOKIE"]);
-			try
-			{
-				sessionID = w.responseHeaders["SET-COOKIE"].Split(new char[2]{'=',';'})[1];
-			}
-			catch
-			{
-				Debug.Log("Unknown cookie");
-				sessionID = "";
-			}
-		}
-	}
+	//	if(w.responseHeaders.ContainsKey("SET-COOKIE"))
+	//	{
+	//		Debug.Log(w.responseHeaders ["SET-COOKIE"]);
+	//		try
+	//		{
+	//			sessionID = w.responseHeaders["SET-COOKIE"].Split(new char[2]{'=',';'})[1];
+	//		}
+	//		catch
+	//		{
+	//			Debug.Log("Unknown cookie");
+	//			sessionID = "";
+	//		}
+	//	}
+	//}
 
 	IEnumerator GetUserFromSession()
 	{
@@ -703,6 +725,52 @@ sealed public class LevelEditor : MonoBehaviour {
 		Debug.Log(w.text);
 	}
 
+    IEnumerator UploadLevel(string JSONData, string creator)
+    {
+        WWWForm form = new WWWForm();
+        byte[] levelData = System.Text.Encoding.UTF8.GetBytes(JSONData);
+        char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".ToCharArray();
+        string tempName = "";
+        System.Random random = new System.Random();
+
+        //Randomize temp name
+        for (int i = 0; i < 10; i++)
+        {
+            tempName += chars[random.Next(chars.Length)];
+        }
+
+        form.AddField("action", "upload");
+        form.AddField("creator", creator);
+        form.AddBinaryData("uploaded_file", levelData, tempName, "application/octet-stream");
+
+        WWW w = new WWW("127.0.0.1/uploadLevel.php", form);
+
+        yield return w;
+        yield return new WaitForSeconds(2);
+
+        if (w.error != null)
+        {
+            Message(w.error, true);
+        }
+        else
+        {
+            LevelActionSelect("Back");
+            if (w.text == "Success")
+                SetNotification("Level \"" + levelName + "\" uploaded successfully!");
+            else
+                SetNotification(w.text);
+        }
+    }
+
+    public void UploadLevelButton()
+    {
+        if(uploadPanel.transform.FindChild("Creator Name Input").GetComponent<InputField>().text.Length < 2)
+            return;
+
+        Message("Uploading", false);
+        StartCoroutine(UploadLevel(Json.Serialize(levelAsJSON()), uploadPanel.transform.FindChild("Creator Name Input").GetComponent<InputField>().text));
+    }
+
     //Change the level details shown to the user based on what level they selected
     public void LevelSelectChange()
     {
@@ -716,7 +784,7 @@ sealed public class LevelEditor : MonoBehaviour {
             //Display level image to user if one exists
             if (System.IO.File.Exists(levelPath + " Image.png"))
             {
-                newLevelImage = new Texture2D(360, 240);
+                newLevelImage = new Texture2D(720, 480);
                 newLevelImage.LoadImage(System.IO.File.ReadAllBytes(levelPath + " Image.png"));
                 levelInformation.FindChild("Open Level Image").GetComponent<Image>().color = Color.white;
                 levelInformation.FindChild("Open Level Image").GetComponent<Image>().sprite = Sprite.Create(newLevelImage, new Rect(0, 0, newLevelImage.width, newLevelImage.height), new Vector2(0.5f, 0.5f));
@@ -734,7 +802,7 @@ sealed public class LevelEditor : MonoBehaviour {
         }
         catch
         {
-            Message("Error: Selected Level Not Found", true, selectionPanel);
+            Message("Error: Selected Level Not Found", true);
             return;
         }
         finally
@@ -743,7 +811,7 @@ sealed public class LevelEditor : MonoBehaviour {
         }
     }
 
-    private void Message(string message, bool error, GameObject nextPanel)
+    private void Message(string message, bool error)
     {
         activePanel.SetActive(false);
         messagePanel.SetActive(true);
@@ -760,11 +828,11 @@ sealed public class LevelEditor : MonoBehaviour {
         messagePanel.transform.FindChild("Okay Button").gameObject.SetActive(error ? true : false);
     }
 
-    private void ExitMessage()
-    {
-        activePanel = selectionPanel;
-        messagePanel.SetActive(false);
-    }
+    //private void ExitMessage()
+    //{
+    //    activePanel = selectionPanel;
+    //    messagePanel.SetActive(false);
+    //}
     
     private void OpenTinker()
     {
@@ -794,6 +862,7 @@ sealed public class LevelEditor : MonoBehaviour {
 
     public void TinkerGroupChanged(int group)
     {
+        levelComplete = false;
         selectedMechanism.group = (byte)(tinkerPanel.transform.FindChild("Group Dropdown").GetComponent<Dropdown>().value);
         selectedMechanism.GetComponent<Renderer>().material.mainTexture = Resources.Load("Textures\\" + GameData.MechanismTypes[selectedMechanism.ID].name + selectedMechanism.GetComponent<Mechanism>().group.ToString()) as Texture;
         tinkerPanel.transform.FindChild("Chosen Mechanism").GetChild(0).GetComponent<Renderer>().material.mainTexture = Resources.Load("Textures\\" + GameData.MechanismTypes[selectedMechanism.ID].name + selectedMechanism.GetComponent<Mechanism>().group.ToString()) as Texture;
@@ -823,17 +892,19 @@ sealed public class LevelEditor : MonoBehaviour {
     {
         string requirements = "";
         int lineCount = 0;
-        bool playerExists = false;
+        int playerCount = 0;
         bool finishExists = false;
 
         for(int y = 0; y < currentLength; y++)
         {
             for(int x = 0; x < currentWidth; x++)
             {
-                if (groundLayout[x, y] == 'X')
+                if(groundLayout[x, y] == 'X')
                     finishExists = true;
-                if (entityLayout[x, y] == 'P')
-                    playerExists = true;
+                if(entityLayout[x, y] == 'P')
+                    playerCount++;
+                //if(playerX != -1)
+                    //playerExists = true;
             }
         }
 
@@ -842,9 +913,14 @@ sealed public class LevelEditor : MonoBehaviour {
             requirements += "- There must be at least one finish block\n";
             lineCount += 2;
         }
-        if (!playerExists)
+        if (playerCount == 0)
         {
             requirements += "- There must be a player entity\n";
+            lineCount += 2;
+        }
+        if(playerCount > 1)
+        {
+            requirements += "- There can only be one player entity\n";
             lineCount += 2;
         }
         if (upload)
@@ -854,7 +930,7 @@ sealed public class LevelEditor : MonoBehaviour {
                 requirements += "- You must set a level name in settings\n";
                 lineCount += 2;
             }
-            if (!levelCompleted)
+            if (!levelComplete)
             {
                 requirements += "- You must complete the level yourself before uploading it\n";
                 lineCount += 3;
@@ -885,12 +961,18 @@ sealed public class LevelEditor : MonoBehaviour {
         if (System.IO.File.Exists("User Levels\\" + GameObject.Find("Open Level Field").GetComponent<Text>().text + ".lv"))
         {
             StartCoroutine(LoadLevelWait("User Levels\\" + GameObject.Find("Open Level Field").GetComponent<Text>().text + ".lv"));
-            Message("Loading", false, settingsPanel);
+            Message("Loading", false);
         }
         else
         {
-            Message("Can't find file for selected level.", true, settingsPanel);
+            Message("Can't find file for selected level.", true);
         }
+    }
+
+    private void SetNotification(string message)
+    {
+        notificationText.SetActive(true);
+        notificationText.GetComponent<NotificationMessage>().SetMessage(message);
     }
 
     //Called when the user wants to load a previously saved level
@@ -905,12 +987,14 @@ sealed public class LevelEditor : MonoBehaviour {
         ClearLevel();
         yield return new WaitForSeconds(2);
         LoadLevel(levelPath);
+        SetNotification("Loaded Level \"" + levelName + "\"");
     }
 
     //Called when returning from testing a level
     private void LoadLevel(Dictionary<string, object> levelData)
     {
         Level levelToLoad = LevelLoader.LoadFromJSON(levelData, -1);
+        Texture2D loadedLevelImage = new Texture2D(720,480);
         levelColor = levelToLoad.BackgroundColor;
 
         Debug.Log(levelColor.r.ToString());
@@ -919,7 +1003,18 @@ sealed public class LevelEditor : MonoBehaviour {
 
         levelName = levelToLoad.Name;
         levelDifficulty = levelToLoad.Difficulty;
-        mechanisms = levelToLoad.MechanismLayout;
+
+        //if(testedLevelSprite != null)
+        //{
+        //    levelSprite = testedLevelSprite;
+        //    lastLevelSprite = levelSprite;
+        //}
+        if (System.IO.File.Exists("User Levels\\" + levelName + " Image.png"))
+        {
+            loadedLevelImage.LoadImage(System.IO.File.ReadAllBytes("User Levels\\" + levelName + " Image.png"));
+            levelSprite = Sprite.Create(loadedLevelImage, new Rect(0, 0, loadedLevelImage.width, loadedLevelImage.height), new Vector2(0.5f, 0.5f));
+            lastLevelSprite = levelSprite;
+        }
 
         if (levelToLoad.Width < 4)
             currentWidth = 4;
@@ -947,7 +1042,10 @@ sealed public class LevelEditor : MonoBehaviour {
                     entityLayout[x, y] = levelToLoad.EntityLayout[x, y].ID;
                 }
                 if (levelToLoad.MechanismLayout[x, y] != null)
+                {
                     mechanismLayout[x, y] = levelToLoad.MechanismLayout[x, y].ID;
+                    mechanisms[x, y] = levelToLoad.MechanismLayout[x, y];
+                }
                 
 				Camera.main.GetComponent<Grid>().SetGridSize((currentWidth * 2) - 1, (currentLength * 2) - 1);
 				lengthArrows.transform.position = new Vector3(currentWidth - 3,0,(currentLength * 2) + 1);

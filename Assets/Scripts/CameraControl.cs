@@ -65,11 +65,11 @@ public sealed class CameraControl : MonoBehaviour {
 		}
 		if(Input.GetAxis("Mouse ScrollWheel") < 0)
 		{
-			transform.position += (transform.position - fixatedPoint).normalized * 1.5f;
+			transform.position += (transform.position - fixatedPoint).normalized * 2f;
 		}
 		if(Input.GetAxis("Mouse ScrollWheel") > 0)
 		{
-			transform.position += (fixatedPoint - transform.position).normalized * 1.5f;
+			transform.position += (fixatedPoint - transform.position).normalized * 2f;
 		}
 		#endregion
 	}
