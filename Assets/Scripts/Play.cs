@@ -50,7 +50,6 @@ sealed public class Play : MonoBehaviour {
 		if(levelWon || currentLevel.LevelID == -1 && Input.GetKeyDown(KeyCode.Escape))
 		{
 			levelLoaded = false;
-			levelWon = false;
 			inputReady = false;
 			currentLevel.EndLevel();
             if (currentLevel.LevelID == -1)
@@ -63,7 +62,8 @@ sealed public class Play : MonoBehaviour {
             {
                 StartCoroutine(StartLevelWait(currentLevel.LevelID + 1));
             }
-		}
+            levelWon = false;
+        }
 
         if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
         {
@@ -152,24 +152,24 @@ sealed public class Play : MonoBehaviour {
 
 	private void StartLevel(int ID)
 	{
-		try
-		{
+		//try
+		//{
 			currentLevel = LevelLoader.Load("LevelData", ID);
             currentLevel.InputCooldown = Time.time;
 			levelLoaded = true;
 			StartCoroutine(InputCooldown(1f));
 			levelTimer = 0;
             levelText.text = "Level " + (currentLevel.LevelID + 1).ToString();
-		}
-		catch(Exception ex)
-		{
-			if(ex is System.IO.FileNotFoundException)
-				Debug.Log("Level File Missing");
-			else
-				Debug.Log(ex.ToString());
+		//}
+		//catch(Exception ex)
+		//{
+		//	if(ex is System.IO.FileNotFoundException)
+		//		Debug.Log("Level File Missing");
+		//	else
+		//		Debug.Log(ex.ToString());
 
-			Error(ex.ToString());
-		}
+		//	Error(ex.ToString());
+		//}
 	}
 
     private void StartLevel(Dictionary<string, object> rawJSON)

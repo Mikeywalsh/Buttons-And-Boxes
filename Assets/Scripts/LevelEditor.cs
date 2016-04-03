@@ -508,6 +508,7 @@ sealed public class LevelEditor : MonoBehaviour {
     {
         string serialized = Json.Serialize(levelData);
         System.IO.File.WriteAllText("User Levels\\" + levelName + ".lv", Crypto.Encrypt(serialized));
+        System.IO.File.WriteAllBytes("User Levels\\" + levelName + " Image.png", levelSprite.texture.EncodeToPNG());
         SetNotification("Level \"" + levelName + "\"" + " saved successfully!");
     }
 
@@ -515,6 +516,9 @@ sealed public class LevelEditor : MonoBehaviour {
     {
         if (requirementsPanel.activeSelf)
             return;
+
+        if(!System.IO.File.Exists("User Levels\\" + levelName + " Image.png") && levelSprite != questionMark)
+            System.IO.File.WriteAllBytes("User Levels\\Temp Image.png", levelSprite.texture.EncodeToPNG());
 
         LevelLoader.levelToLoad = -1;
         LevelLoader.JSONToLoad = levelAsJSON();
@@ -585,7 +589,6 @@ sealed public class LevelEditor : MonoBehaviour {
         else if(action == "Save")
         {
             SaveLevel(levelAsJSON());
-            System.IO.File.WriteAllBytes("User Levels\\" + levelName + " Image.png", levelSprite.texture.EncodeToPNG());
         }
         else if(action == "Load")
         {
@@ -611,7 +614,7 @@ sealed public class LevelEditor : MonoBehaviour {
             selectionPanel.SetActive(false);
             uploadPanel.SetActive(true);
             activePanel = uploadPanel;
-            Camera.main.GetComponent<CameraControl>().disableRotation = false;
+            Camera.main.GetComponent<CameraControl>().disableRotation = true;
         }
         else if(action == "Start Screenshot")
         {
@@ -746,7 +749,6 @@ sealed public class LevelEditor : MonoBehaviour {
         WWW w = new WWW("127.0.0.1/uploadLevel.php", form);
 
         yield return w;
-        yield return new WaitForSeconds(2);
 
         if (w.error != null)
         {
@@ -849,15 +851,16 @@ sealed public class LevelEditor : MonoBehaviour {
 
         tinkerPanel.transform.FindChild("Mechanism Name").GetComponent<Text>().text = GameData.MechanismTypes[selectedMechanism.ID].name;
 
-        if (selectedMechanism.receivesInput)
-        {
-            tinkerStartDropdown.SetActive(true);
-            tinkerStartDropdown.GetComponent<Dropdown>().value = selectedMechanism.startOpen ? 1 : 0;
-        }
-        else
-        {
-            tinkerStartDropdown.SetActive(false);
-        }
+        //TODO: Implement doors being able to start open
+        //if (selectedMechanism.receivesInput)
+        //{
+        //    tinkerStartDropdown.SetActive(true);
+        //    tinkerStartDropdown.GetComponent<Dropdown>().value = selectedMechanism.startOpen ? 1 : 0;
+        //}
+        //else
+        //{
+        //    tinkerStartDropdown.SetActive(false);
+        //}
     }
 
     public void TinkerGroupChanged(int group)
@@ -903,8 +906,6 @@ sealed public class LevelEditor : MonoBehaviour {
                     finishExists = true;
                 if(entityLayout[x, y] == 'P')
                     playerCount++;
-                //if(playerX != -1)
-                    //playerExists = true;
             }
         }
 
@@ -1004,14 +1005,9 @@ sealed public class LevelEditor : MonoBehaviour {
         levelName = levelToLoad.Name;
         levelDifficulty = levelToLoad.Difficulty;
 
-        //if(testedLevelSprite != null)
-        //{
-        //    levelSprite = testedLevelSprite;
-        //    lastLevelSprite = levelSprite;
-        //}
-        if (System.IO.File.Exists("User Levels\\" + levelName + " Image.png"))
+        if (System.IO.File.Exists("User Levels\\" + levelName + " Image.png") || System.IO.File.Exists("User Levels\\Temp Image.png"))
         {
-            loadedLevelImage.LoadImage(System.IO.File.ReadAllBytes("User Levels\\" + levelName + " Image.png"));
+            loadedLevelImage.LoadImage(System.IO.File.Exists("User Levels\\" + levelName + " Image.png")? System.IO.File.ReadAllBytes("User Levels\\" + levelName + " Image.png") : System.IO.File.ReadAllBytes("User Levels\\Temp Image.png"));
             levelSprite = Sprite.Create(loadedLevelImage, new Rect(0, 0, loadedLevelImage.width, loadedLevelImage.height), new Vector2(0.5f, 0.5f));
             lastLevelSprite = levelSprite;
         }

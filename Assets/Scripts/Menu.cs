@@ -3,20 +3,35 @@ using UnityEngine.UI;
 using System.Collections;
 
 public class Menu : MonoBehaviour {
-	
+
+    public GameObject[] worldPanels = new GameObject[3];
 	public GameObject[] levelSelectButtons = new GameObject[9];
-	public GameObject mainMenuCanvas;
-	public GameObject levelSelectCanvas;
-	public GameObject continueButton;
+	public GameObject mainMenuPanel;
+	public GameObject worldSelectPanel;
+    public GameObject whatsNewPanel;
+    public GameObject creditsPanel;
+    public GameObject selectorPanel;
+    public GameObject nextWorldButton;
+    public GameObject previousWorldButton;
+    public GameObject worldNumberText;
+    public GameObject worldNameText;
+    public GameObject optionsButton;
+
+    private GameObject currentWorldPanel;
+    private int currentWorld;
+    private string[] worlds = new string[3];
+    private string[] worldNames = new string[3];
 
 	void Start () {
+        //Worlds are hardcoded for now, will be determined from file in future
+        worlds = new string[]{ "World 1", "World 2", "User Levels" };
+        worldNames = new string[] { "\"The Basics\"", "\"Lasers 'n Stuff\"", "Extremely Basic/Buggy" };
+        currentWorldPanel = worldPanels[0];
+        currentWorld = 0;
 
-        //System.IO.File.WriteAllText("User Levels\\Beginner Buttons.lv",Crypto.Encrypt(System.IO.File.ReadAllText("User Levels\\Beginner Buttons.lv")));
-        //System.IO.File.WriteAllText("User Levels\\HUGE level.lv", Crypto.Decrypt(System.IO.File.ReadAllText("User Levels\\HUGE level.lv")));
-        //System.IO.File.WriteAllText("User Levels\\Larger Level.lv", Crypto.Decompress(System.IO.File.ReadAllText("User Levels\\Larger Level.lv")));
-        Debug.Log(PlayerPrefs.GetInt("currentLevel").ToString());
+        //Options not yet implemented, disable button until they are
+        optionsButton.GetComponent<Button>().interactable = false;
 
-        GameObject.Find("Level Select Button").GetComponent<Button>().interactable = false;
 		if(GameData.initialized == false)
 			GameData.Initialize();
 
@@ -28,25 +43,10 @@ public class Menu : MonoBehaviour {
 		if(PlayerPrefs.GetInt("currentLevel") > 8 || PlayerPrefs.GetInt("currentLevel") < 0)
 			PlayerPrefs.SetInt("currentLevel", 0);
 
-		if(PlayerPrefs.GetInt("currentLevel") == 0)
-			continueButton.GetComponent<Button>().interactable = false;
-
 		for(int x = 0; x <= PlayerPrefs.GetInt("currentLevel"); x++)
 		{
 			levelSelectButtons[x].GetComponent<Button>().interactable = true;
 		}
-	}
-
-	public void ShowLevelSelect()
-	{
-		mainMenuCanvas.GetComponent<Canvas>().enabled = false;
-		levelSelectCanvas.GetComponent<Canvas>().enabled = true;
-	}
-
-	public void ShowMainMenu()
-	{
-		mainMenuCanvas.GetComponent<Canvas> ().enabled = true;
-		levelSelectCanvas.GetComponent<Canvas> ().enabled = false;
 	}
 
 	public void StartGameAtLevel(int level)
@@ -67,9 +67,66 @@ public class Menu : MonoBehaviour {
 		Application.LoadLevel(1);
 	}
 
-	public void ContinueGame()
-	{
-		LevelLoader.levelToLoad = PlayerPrefs.GetInt("currentLevel");
-		Application.LoadLevel(1);
-	}
+    public void EnterWorldSelect()
+    {
+        worldSelectPanel.SetActive(true);
+        mainMenuPanel.SetActive(false);
+        SelectWorld(0);
+    }
+
+    public void ShowCredits()
+    {
+        mainMenuPanel.SetActive(false);
+        creditsPanel.SetActive(true);
+    }
+
+    public void ShowWhatsNew()
+    {
+        mainMenuPanel.SetActive(false);
+        whatsNewPanel.SetActive(true);
+    }
+
+    public void ReturnToMenu()
+    {
+        worldSelectPanel.SetActive(false);
+        whatsNewPanel.SetActive(false);
+        creditsPanel.SetActive(false);
+        mainMenuPanel.SetActive(true);
+    }
+
+    private void SelectWorld(int i)
+    {
+        currentWorld = i;
+        worldNumberText.GetComponent<Text>().text = worlds[i];
+        worldNameText.GetComponent<Text>().text = worldNames[i];
+
+        if (i == 0)
+            previousWorldButton.SetActive(false);
+        else
+            previousWorldButton.SetActive(true);
+
+        if (i == worlds.Length - 1)
+            nextWorldButton.SetActive(false);
+        else
+            nextWorldButton.SetActive(true);
+
+        currentWorldPanel.SetActive(false);
+        currentWorldPanel = worldPanels[i];
+        currentWorldPanel.SetActive(true);
+    }
+
+    public void PreviousWorld()
+    {
+        SelectWorld(currentWorld - 1);
+    }
+
+    public void NextWorld()
+    {
+        SelectWorld(currentWorld + 1);
+    }
+
+    public void ExitGame()
+    {
+        Application.Quit();
+    }
 }
