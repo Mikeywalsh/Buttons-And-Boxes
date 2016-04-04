@@ -18,7 +18,8 @@ sealed public class LevelEditor : MonoBehaviour {
     public GameObject openLevelPanel;
     public GameObject tinkerPanel;
     public GameObject uploadPanel;
-    public GameObject requirementsPanel;
+    public GameObject exitPanel;
+    public GameObject tooltipPanel;
     public GameObject screenshotPanel;
     public GameObject messagePanel;
     public GameObject messageText;
@@ -57,6 +58,9 @@ sealed public class LevelEditor : MonoBehaviour {
 	private bool validChoice;
 	private bool cursorOOB;
     private bool levelComplete;
+    private bool levelChanged;
+    private bool minorChange;
+    private bool helpEnabled;
 
 	private int currentWidth;
 	private int currentLength;
@@ -76,7 +80,9 @@ sealed public class LevelEditor : MonoBehaviour {
         playerX = -1;
         levelSprite = questionMark;
         lastLevelSprite = questionMark;
-        GameData.Initialize();
+
+        if(!GameData.initialized)
+            GameData.Initialize();
 
         SelectionSwitched("GF#Floor");
         activePanel = settingsPanel;
@@ -85,8 +91,9 @@ sealed public class LevelEditor : MonoBehaviour {
 
         if (loadingLevel)
         {
-            levelComplete = loadingWonLevel;
             LoadLevel(LevelLoader.JSONToLoad);
+            levelComplete = loadingWonLevel;
+            loadingWonLevel = false;
             loadingLevel = false;
         }
         else
@@ -101,11 +108,11 @@ sealed public class LevelEditor : MonoBehaviour {
         if (!selectionPanel.activeSelf)
             return;
          
-        if(requirementsPanel.activeSelf)
-            requirementsPanel.GetComponent<RectTransform>().anchoredPosition = new Vector2(Input.mousePosition.x + (GameObject.Find("Requirements Panel").GetComponent<RectTransform>().rect.width / 2), Input.mousePosition.y - Screen.height - (GameObject.Find("Requirements Panel").GetComponent<RectTransform>().rect.height / 2));
+        if(tooltipPanel.activeSelf)
+            tooltipPanel.GetComponent<RectTransform>().anchoredPosition = new Vector2(Input.mousePosition.x + (GameObject.Find("Tooltip Panel").GetComponent<RectTransform>().rect.width / 2), Input.mousePosition.y - Screen.height - (GameObject.Find("Tooltip Panel").GetComponent<RectTransform>().rect.height / 2));
 
-        if (Input.GetKeyDown(KeyCode.O))
-			levelAsJSON();
+        if (levelComplete && levelChanged)
+            levelComplete = false;
 
 		if(Input.GetKeyDown(KeyCode.U))
 			StartCoroutine(GetUserFromSession());
@@ -115,10 +122,10 @@ sealed public class LevelEditor : MonoBehaviour {
 			currentArrow.GetComponent<Renderer>().material.color = Color.white;
 
 		#region Allow User To Clear Entire Level
-		if(Input.GetKeyDown(KeyCode.Backspace))
-		{
-            ClearLevel();
-		}
+		//if(Input.GetKeyDown(KeyCode.Backspace))
+		//{
+        //    ClearLevel();
+		//}
 		#endregion
 
 		Ray mouseRay = Camera.main.ScreenPointToRay (Input.mousePosition);
@@ -128,7 +135,7 @@ sealed public class LevelEditor : MonoBehaviour {
             Destroy(cursor);
 
         //Check if mouse is being hovered over valid level space and allow to user to create or destroy aspects of the level
-        if (ground.Raycast(mouseRay, out hitDist) && ValidMousePos())
+        if (ground.Raycast(mouseRay, out hitDist) && ValidMousePos() && !helpEnabled)
 		{
 			#region Create Appropriate Cursor If Mouse Is Within Bounds Of Level
 			mouseVector = mouseRay.GetPoint(hitDist);
@@ -174,13 +181,13 @@ sealed public class LevelEditor : MonoBehaviour {
 				{
 					currentObject = Instantiate(GameData.GroundTypes[selectedBlock], mouseVector - new Vector3(0, 1, 0), Quaternion.identity) as GameObject;
 					groundLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] = selectedBlock;
-                    levelComplete = false;
+                    levelChanged = true;
                 }
 				else if(selectedLayer == 'E')
 				{
 					currentObject = Instantiate(GameData.EntityTypes[selectedBlock], mouseVector + new Vector3(0, 1, 0), Quaternion.identity) as GameObject;
 					entityLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] = selectedBlock;
-                    levelComplete = false;
+                    levelChanged = true;
 
                     if (selectedBlock == 'P')
                     {
@@ -198,7 +205,7 @@ sealed public class LevelEditor : MonoBehaviour {
                         currentObject = Instantiate(GameData.MechanismTypes[selectedBlock], mouseVector + new Vector3(0, 1, 0), Quaternion.Euler(new Vector3(-90, 0, 0))) as GameObject;
                         mechanismLayout[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] = selectedBlock;
                         mechanisms[(int)(mouseVector.x / 2), (int)(mouseVector.z / 2)] = currentObject.GetComponent<Mechanism>();
-                        levelComplete = false;
+                        levelChanged = true;
                     }
                     else
                     {
@@ -276,8 +283,8 @@ sealed public class LevelEditor : MonoBehaviour {
 					Camera.main.GetComponent<CameraControl>().ChangePivotPoint(new Vector3(sizeModifier,0, 0));
 					CheckArrows();
 				}
-			}
-            levelComplete = false;
+                levelChanged = true;
+            }
         }
 		#endregion
 	}
@@ -306,7 +313,7 @@ sealed public class LevelEditor : MonoBehaviour {
             if (levelObjects.transform.FindChild(layer + x.ToString("00") + y.ToString("00")).GetComponent<Block>().Despawning)
                 yield break;
 
-            levelComplete = false;
+            levelChanged = true;
             levelObjects.transform.FindChild(layer + x.ToString("00") + y.ToString("00")).GetComponent<Block>().Despawn();
 			yield return new WaitForSeconds(0.5f);
 			if(layer == 'G')
@@ -345,11 +352,11 @@ sealed public class LevelEditor : MonoBehaviour {
 
     private IEnumerator DisablePlayUpload()
     {
-        playButton.SetActive(false);
-        uploadButton.SetActive(false);
+        playButton.GetComponent<Button>().interactable = false;
+        uploadButton.GetComponent<Button>().interactable = false;
         yield return new WaitForSeconds(2.5f);
-        playButton.SetActive(true);
-        uploadButton.SetActive(true);
+        playButton.GetComponent<Button>().interactable = true;
+        uploadButton.GetComponent<Button>().interactable = true;
     }
 
     private void ClearTinker()
@@ -404,8 +411,18 @@ sealed public class LevelEditor : MonoBehaviour {
         if (tinkerPanel.activeSelf)
             tinkerPanel.SetActive(false);
 
-		selectedLayer = contents[0][0];
-		selectedBlock = contents[0][1];
+        if (contents[1] == "Help")
+        {
+            helpEnabled = true;
+            ShowTooltip("Help");
+        }
+        else
+        {
+            helpEnabled = false;
+            HideTooltip();
+            selectedLayer = contents[0][0];
+            selectedBlock = contents[0][1];
+        }
 
         if (currentButton)
             currentButton.GetComponent<Image>().sprite = Panel;
@@ -442,7 +459,12 @@ sealed public class LevelEditor : MonoBehaviour {
 			}
 		}
 
-		for(int y = 0; y < currentLength; y++)
+        //TEMP ALPHA V0.1.0 PLEASE DELETE
+        if (minX == -1)
+            return levelData;
+        //----
+
+        for (int y = 0; y < currentLength; y++)
 		{
 			for(int x = 0; x < currentWidth; x++)
 			{
@@ -504,20 +526,73 @@ sealed public class LevelEditor : MonoBehaviour {
         return levelData;
 	}
 
+    private IEnumerator SaveLevelWait()
+    {
+        Message("Saving...", false);
+        yield return new WaitForSeconds(2);
+
+        SaveLevel(levelAsJSON());
+        LevelActionSelect("Back");
+    }
+
     private void SaveLevel(Dictionary<string, object> levelData)
     {
+        //TEMP ALPHA V0.1.0 PLEASE DELETE
+        bool empty = true;
+        for (int y = 0; y < currentLength; y++)
+        {
+            for (int x = 0; x < currentWidth; x++)
+            {
+                if (groundLayout[x, y] != null)
+                    empty = false;
+            }
+        }
+        if (empty)
+        {
+            SetNotification("Cannot save an empty level");
+            return;
+        }
+        //----
+
         string serialized = Json.Serialize(levelData);
         System.IO.File.WriteAllText("User Levels\\" + levelName + ".lv", Crypto.Encrypt(serialized));
-        System.IO.File.WriteAllBytes("User Levels\\" + levelName + " Image.png", levelSprite.texture.EncodeToPNG());
+        if(levelSprite != questionMark)
+            System.IO.File.WriteAllBytes("User Levels\\" + levelName + " Image.png", levelSprite.texture.EncodeToPNG());
+        levelChanged = false;
+        minorChange = false;
         SetNotification("Level \"" + levelName + "\"" + " saved successfully!");
     }
 
     public void TestLevel()
     {
-        if (requirementsPanel.activeSelf)
-            return;
+        if (tooltipPanel.activeSelf)
+        {
+            if (helpEnabled)
+            {
+                helpEnabled = false;
+                ShowRequirements(false);
+                SelectionSwitched("GF#Floor");
+                return;
+            }
+            else
+                return;
+        }
 
-        if(!System.IO.File.Exists("User Levels\\" + levelName + " Image.png") && levelSprite != questionMark)
+        //TEMP ALPHA V0.1.0 PLEASE DELETE
+        bool finishExists = false;
+        for (int y = 0; y < currentLength; y++)
+        {
+            for (int x = 0; x < currentWidth; x++)
+            {
+                if (groundLayout[x, y] == 'X')
+                    finishExists = true;
+            }
+        }
+        if (!finishExists)
+            return;
+        //----
+
+        if (!System.IO.File.Exists("User Levels\\" + levelName + " Image.png") && levelSprite != questionMark)
             System.IO.File.WriteAllBytes("User Levels\\Temp Image.png", levelSprite.texture.EncodeToPNG());
 
         LevelLoader.levelToLoad = -1;
@@ -537,6 +612,9 @@ sealed public class LevelEditor : MonoBehaviour {
 
     public void SaveLevelSettings()
     {
+        if (levelColor != GameObject.Find("Level Color Select").GetComponent<Image>().color || levelDifficulty != GameObject.Find("Difficulty Field").GetComponent<Text>().text || levelSprite != settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().sprite)
+            minorChange = true;
+
         levelName = GameObject.Find("Level Name Input").GetComponent<InputField>().text;
         Camera.main.backgroundColor = GameObject.Find("Level Color Select").GetComponent<Image>().color;
         levelColor = GameObject.Find("Level Color Select").GetComponent<Image>().color;
@@ -584,11 +662,23 @@ sealed public class LevelEditor : MonoBehaviour {
         }
         else if(action == "Exit")
         {
-            Application.LoadLevel(0);
+            if (levelChanged || minorChange)
+            {
+                exitPanel.SetActive(true);
+                activePanel = exitPanel;
+                Camera.main.GetComponent<CameraControl>().disableRotation = true;
+                selectionPanel.SetActive(false);
+            }
+            else
+                ExitEditor();
+
         }
         else if(action == "Save")
         {
-            SaveLevel(levelAsJSON());
+            if(levelName == "")
+                SetNotification("You need to set a level name in order to save the level");
+            else
+                StartCoroutine(SaveLevelWait());
         }
         else if(action == "Load")
         {
@@ -601,6 +691,7 @@ sealed public class LevelEditor : MonoBehaviour {
         }
         else if(action == "Back")
         {
+            tooltipPanel.SetActive(false);
             activePanel.SetActive(false);
             selectionPanel.SetActive(true);
             activePanel = selectionPanel;
@@ -608,13 +699,41 @@ sealed public class LevelEditor : MonoBehaviour {
         }
         else if(action == "Upload")
         {
-            if (requirementsPanel.activeSelf)
+            if (tooltipPanel.activeSelf)
+            {
+                if (helpEnabled)
+                {
+                    helpEnabled = false;
+                    ShowRequirements(false);
+                    SelectionSwitched("GF#Floor");
+                    return;
+                }
+                else
+                    return;
+            }
+
+            //TEMP ALPHA V0.1.0 PLEASE DELETE
+            bool finishExists = false;
+            for (int y = 0; y < currentLength; y++)
+            {
+                for (int x = 0; x < currentWidth; x++)
+                {
+                    if (groundLayout[x, y] == 'X')
+                        finishExists = true;
+                }
+            }
+            if (!finishExists)
                 return;
+            //----
 
             selectionPanel.SetActive(false);
             uploadPanel.SetActive(true);
             activePanel = uploadPanel;
             Camera.main.GetComponent<CameraControl>().disableRotation = true;
+        }
+        else if(action == "Clear")
+        {
+            ClearLevel();
         }
         else if(action == "Start Screenshot")
         {
@@ -746,12 +865,14 @@ sealed public class LevelEditor : MonoBehaviour {
         form.AddField("creator", creator);
         form.AddBinaryData("uploaded_file", levelData, tempName, "application/octet-stream");
 
-        WWW w = new WWW("127.0.0.1/uploadLevel.php", form);
+        //WWW w = new WWW("127.0.0.1/uploadLevel.php", form);
+        WWW w = new WWW("michael-walsh.co.uk/uploadLevel.php", form);
 
         yield return w;
 
         if (w.error != null)
         {
+            Debug.Log(w.error);
             Message(w.error, true);
         }
         else
@@ -771,6 +892,25 @@ sealed public class LevelEditor : MonoBehaviour {
 
         Message("Uploading", false);
         StartCoroutine(UploadLevel(Json.Serialize(levelAsJSON()), uploadPanel.transform.FindChild("Creator Name Input").GetComponent<InputField>().text));
+    }
+
+    public void ExitEditor()
+    {
+        Application.LoadLevel(0);
+    }
+
+    public void SaveExit()
+    {
+        if (levelName == "")
+        {
+            LevelActionSelect("Back");
+            SetNotification("You need to set a level name in order to save the level");
+        }
+        else
+        {
+            SaveLevel(levelAsJSON());
+            ExitEditor();
+        }
     }
 
     //Change the level details shown to the user based on what level they selected
@@ -865,7 +1005,7 @@ sealed public class LevelEditor : MonoBehaviour {
 
     public void TinkerGroupChanged(int group)
     {
-        levelComplete = false;
+        levelChanged = true;
         selectedMechanism.group = (byte)(tinkerPanel.transform.FindChild("Group Dropdown").GetComponent<Dropdown>().value);
         selectedMechanism.GetComponent<Renderer>().material.mainTexture = Resources.Load("Textures\\" + GameData.MechanismTypes[selectedMechanism.ID].name + selectedMechanism.GetComponent<Mechanism>().group.ToString()) as Texture;
         tinkerPanel.transform.FindChild("Chosen Mechanism").GetChild(0).GetComponent<Renderer>().material.mainTexture = Resources.Load("Textures\\" + GameData.MechanismTypes[selectedMechanism.ID].name + selectedMechanism.GetComponent<Mechanism>().group.ToString()) as Texture;
@@ -891,7 +1031,7 @@ sealed public class LevelEditor : MonoBehaviour {
         levelSprite = Sprite.Create(levelImage, new Rect(0, 0, levelImage.width, levelImage.height), new Vector2(0.5f, 0.5f));
     }
 
-    public void ShowRequirements(bool upload)
+    private void ShowRequirements(bool upload)
     {
         string requirements = "";
         int lineCount = 0;
@@ -946,14 +1086,114 @@ sealed public class LevelEditor : MonoBehaviour {
         if (requirements == "")
             return;
 
-        requirementsPanel.SetActive(true);
-        requirementsPanel.GetComponent<RectTransform>().sizeDelta = new Vector2(166, 8 + (16 * lineCount));
-        requirementsPanel.transform.GetChild(0).GetComponent<Text>().text = requirements;
+        tooltipPanel.SetActive(true);
+        tooltipPanel.GetComponent<RectTransform>().sizeDelta = new Vector2(166, 8 + (16 * lineCount));
+        tooltipPanel.transform.GetChild(0).GetComponent<Text>().text = requirements;
     }
 
-    public void HideRequirements()
+    public void HideTooltip()
     {
-        requirementsPanel.SetActive(false);
+        tooltipPanel.SetActive(false);
+    }
+
+    public void ShowTooltip(string id)
+    {
+        if (!helpEnabled)
+        {
+            if (id == "Play" || id == "Upload")
+                ShowRequirements(id == "Play" ? false : true);
+            return;
+        }
+
+        string helpString = "";
+        int lineCount = 0;
+
+        switch(id)
+        {
+            case "Settings":
+                helpString = "Allows you to change the name, intended difficulty and color of the level.";
+                lineCount = 3;
+                break;
+            case "Save":
+                helpString = "Allows you to save the level, providing they have set a level name.";
+                lineCount = 3;
+                break;
+            case "Play":
+                helpString = "Play through the level you have built to test its elements.";
+                lineCount = 3;
+                break;
+            case "Upload":
+                helpString = "Upload your finished level so that other players can play through it.";
+                lineCount = 4;
+                break;
+            case "Load":
+                helpString = "Open previous finished or part-built levels and edit them.";
+                lineCount = 3;
+                break;
+            case "Tinker":
+                helpString = "Select mechanisms and change their more intricate settings.";
+                lineCount = 3;
+                break;
+            case "Exit":
+                helpString = "Exit the level editor and return to the main menu.";
+                lineCount = 2;
+                break;
+            case "Help":
+                helpString = "Selecting this and highlighting other buttons will show you what they do.";
+                lineCount = 4;
+                break;
+            case "Clear":
+                helpString = "Clear the current level elements.";
+                lineCount = 2;
+                break;
+            case "Floor":
+                helpString = "A standard floor block, players can move on this without any side effects.";
+                lineCount = 3;
+                break;
+            case "Ice":
+                helpString = "An ice block, when players move onto ice, they cannot stop until they are not on an ice block.";
+                lineCount = 5;
+                break;
+            case "Pit":
+                helpString = "A pit, pushing crates into this will create a platform that acts as a floor block.";
+                lineCount = 3;
+                break;
+            case "Finish":
+                helpString = "A finish block, when a player moves onto this, the level is complete.";
+                lineCount = 3;
+                break;
+            case "Wall":
+                helpString = "A wall block, acts as an immovable obstruction to any entities.";
+                lineCount = 3;
+                break;
+            case "Crate":
+                helpString = "A standard crate, can be moved when pushed by players or when another crate is pushed into it on ice.";
+                lineCount = 5;
+                break;
+            case "Heavy Crate":
+                helpString = "A heavy crate, at the moment, it behaves exactly the same as a normal crate.";
+                lineCount = 4;
+                break;
+            case "Player":
+                helpString = "The player object, only one of these can exist at a time.";
+                lineCount = 3;
+                break;
+            case "Button":
+                helpString = "A button, can be pushed down by an entity above it. When all buttons of one color are pushed down, the corresponding door(s) will be activated.";
+                lineCount = 6;
+                break;
+            case "Door":
+                helpString = "A door, will be activated when all buttons of the same color are pushed down.";
+                lineCount = 4;
+                break;
+        }
+
+        if(helpString != "")
+        {
+            tooltipPanel.SetActive(true);
+            tooltipPanel.GetComponent<RectTransform>().sizeDelta = new Vector2(166, 8 + (16 * lineCount));
+            tooltipPanel.transform.GetChild(0).GetComponent<Text>().text = helpString;
+        }
     }
 
     //Called when the user wishes to amend a previously created level
@@ -994,7 +1234,7 @@ sealed public class LevelEditor : MonoBehaviour {
     //Called when returning from testing a level
     private void LoadLevel(Dictionary<string, object> levelData)
     {
-        Level levelToLoad = LevelLoader.LoadFromJSON(levelData, -1);
+        Level levelToLoad = LevelLoader.LoadFromJSON(levelData, -1, true);
         Texture2D loadedLevelImage = new Texture2D(720,480);
         levelColor = levelToLoad.BackgroundColor;
 
@@ -1050,5 +1290,7 @@ sealed public class LevelEditor : MonoBehaviour {
             }
         }
         Camera.main.GetComponent<CameraControl>().SetPivotPoint(new Vector3(currentWidth - 1, 0, currentLength - 1));
+        levelChanged = false;
+        levelComplete = false;
     }
 }

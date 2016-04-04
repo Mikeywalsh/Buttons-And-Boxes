@@ -28,7 +28,7 @@ public class DropDownList : MonoBehaviour {
 		if(Time.time - 0.25f < lastClick)
 			return;
 
-		iTween.ValueTo(gameObject, iTween.Hash("from", gameObject.GetComponent<RectTransform>().offsetMin.y , "to", dropped? baseOffsetMin.y + 75 : baseOffsetMin.y, "time", 0.25f, "easetype", iTween.EaseType.linear, "onUpdate", "ResizeList"));
+		iTween.ValueTo(gameObject, iTween.Hash("from", gameObject.GetComponent<RectTransform>().offsetMin.y , "to", dropped? baseOffsetMin.y + height : baseOffsetMin.y, "time", 0.25f, "easetype", iTween.EaseType.linear, "onUpdate", "ResizeList"));
 		iTween.RotateTo(linkedButton, iTween.Hash("z", dropped? 180 : 270, "time", 0.15f, "easetype", iTween.EaseType.linear));
 
 		if(listBelow)

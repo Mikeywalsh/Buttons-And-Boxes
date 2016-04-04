@@ -1,0 +1,21 @@
+{	
+	"groundtypes":
+	[
+		{"key":"F", "name":"Floor Block"},
+		{"key":"P", "name":"Pit"},
+		{"key":"I", "name":"Ice Block"},
+		{"key":"X", "name":"Finish Block"}
+	],
+	"entitytypes":
+	[
+		{"key":"C", "name":"Crate"},
+		{"key":"H", "name":"Heavy Crate"},
+		{"key":"P", "name":"Player"},
+		{"key":"W", "name":"Wall Block"}
+	],
+	"mechanismtypes":
+	[
+		{"key":"A", "name":"Button"},
+		{"key":"B", "name":"Door"}
+	]
+}

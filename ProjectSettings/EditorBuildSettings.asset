@@ -9,7 +9,7 @@ EditorBuildSettings:
     path: Assets/Scenes/MainMenu.unity
   - enabled: 1
     path: Assets/Scenes/PlayLevel.unity
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/EndScene.unity
   - enabled: 1
     path: Assets/Scenes/LevelEditor.unity

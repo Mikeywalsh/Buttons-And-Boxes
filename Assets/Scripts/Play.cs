@@ -18,23 +18,23 @@ sealed public class Play : MonoBehaviour {
 	public Text errorText;
 
 	private Level currentLevel;
-	private bool levelLoaded;
-	private Entity player;
+    private Entity player;
+    private bool levelLoaded;
 	private bool inputReady;
 	private bool gamePaused;
 	private bool errorOccured;
+    private bool moved;
 	private float levelTimer;
 	private float cameraZoom = 35f;
     private byte clockCycle;
     private float clockTimer;
-    private bool moved;
     private int[] dir = new int[] { 0, 0 };
 
     void Start()
     {
 		player = GameObject.Find("Player").GetComponent<Entity>();
 		Camera.main.transform.position = player.transform.position + (Camera.main.transform.position - player.transform.position).normalized * cameraZoom;
-        if (LevelLoader.levelToLoad == -1)
+        if (LevelLoader.levelToLoad < 0)
             StartLevel(LevelLoader.JSONToLoad);
         else
             StartLevel(LevelLoader.levelToLoad);
@@ -44,23 +44,35 @@ sealed public class Play : MonoBehaviour {
 		if(!levelLoaded || gamePaused || errorOccured)
 			return;
 
-		levelTimer += Time.deltaTime;
+        if (Input.GetKeyDown(KeyCode.Escape))
+            Pause();
+
+        levelTimer += Time.deltaTime;
 		timeText.text = Mathf.FloorToInt(levelTimer / 60F).ToString("00") + ":" + Mathf.FloorToInt(levelTimer % 60).ToString("00");
 
-		if(levelWon || currentLevel.LevelID == -1 && Input.GetKeyDown(KeyCode.Escape))
+		if(levelWon)
 		{
 			levelLoaded = false;
 			inputReady = false;
 			currentLevel.EndLevel();
+
             if (currentLevel.LevelID == -1)
             {
                 LevelEditor.loadingLevel = true;
                 LevelEditor.loadingWonLevel = levelWon;
 				StartCoroutine(StartLevelWait(-1));
             }
+            if(currentLevel.LevelID == -2)
+            {
+                Menu.returningFromUserLevel = true;
+                StartCoroutine(StartLevelWait(-2));
+            }
             else
             {
-                StartCoroutine(StartLevelWait(currentLevel.LevelID + 1));
+                if (currentLevel.LevelID == 8)
+                    Application.LoadLevel(0);
+                else
+                    StartCoroutine(StartLevelWait(currentLevel.LevelID + 1));
             }
             levelWon = false;
         }
@@ -87,7 +99,8 @@ sealed public class Play : MonoBehaviour {
             moved = false;
         }
 
-        if (Time.time - clockTimer >= 0.05f && !player.IsMoving && inputReady)
+        //if (Time.time - clockTimer >= 0.05f && !player.IsMoving && inputReady)
+        if (!player.IsMoving && inputReady)
         {
             if (dir[0] != 0 || dir[1] != 0)
             {
@@ -102,9 +115,9 @@ sealed public class Play : MonoBehaviour {
 		if(Input.GetKey(KeyCode.E))
 			Camera.main.transform.RotateAround(player.transform.position, Vector3.up, -60f * Time.deltaTime);
 		if(Input.GetAxis("Mouse ScrollWheel") > 0 || Input.GetKey(KeyCode.Equals) || Input.GetKey(KeyCode.KeypadPlus))
-			cameraZoom = Mathf.Clamp(cameraZoom - (60 * Time.deltaTime), 15f, 35f);
+			cameraZoom = Mathf.Clamp(cameraZoom - (75 * Time.deltaTime), 15f, 35f);
 		else if(Input.GetAxis("Mouse ScrollWheel") < 0 || Input.GetKey(KeyCode.Minus) || Input.GetKey(KeyCode.KeypadMinus))
-			cameraZoom = Mathf.Clamp(cameraZoom + (60 * Time.deltaTime), 15f, 35f);
+			cameraZoom = Mathf.Clamp(cameraZoom + (75 * Time.deltaTime), 15f, 35f);
 
 		if(Input.GetKey(KeyCode.R))
 			RestartLevel();
@@ -132,55 +145,55 @@ sealed public class Play : MonoBehaviour {
         StartLevel(LevelLoader.JSONToLoad);        
     }
 
-    //Called when starting a level outsie of the level editor
+    //Called when starting a level outside of the level editor
     private IEnumerator StartLevelWait(int ID)
 	{
 		yield return new WaitForSeconds(1.25f);
 
-		if(ID >= 9)
-			Application.LoadLevel(2);
-		else if(ID == -1)
-			Application.LoadLevel(3);
-		else
-		{
-			if(PlayerPrefs.GetInt("currentLevel") < ID)
-				PlayerPrefs.SetInt("currentLevel", ID);
+        if (ID == -1)
+            Application.LoadLevel(2);
+        else if (ID == -2)
+            Application.LoadLevel(0);
+        else
+        {
+            if (PlayerPrefs.GetInt("currentLevel") < ID)
+                PlayerPrefs.SetInt("currentLevel", ID);
 
-			StartLevel(ID);
-		}
+            StartLevel(ID);
+        }
 	}
 
 	private void StartLevel(int ID)
 	{
-		//try
-		//{
+		try
+		{
 			currentLevel = LevelLoader.Load("LevelData", ID);
             currentLevel.InputCooldown = Time.time;
 			levelLoaded = true;
 			StartCoroutine(InputCooldown(1f));
 			levelTimer = 0;
             levelText.text = "Level " + (currentLevel.LevelID + 1).ToString();
-		//}
-		//catch(Exception ex)
-		//{
-		//	if(ex is System.IO.FileNotFoundException)
-		//		Debug.Log("Level File Missing");
-		//	else
-		//		Debug.Log(ex.ToString());
+        }
+		catch(Exception ex)
+		{
+			if(ex is System.IO.FileNotFoundException)
+				Debug.Log("Level File Missing");
+			else
+				Debug.Log(ex.ToString());
 
-		//	Error(ex.ToString());
-		//}
+			Error(ex.ToString());
+		}
 	}
 
     private void StartLevel(Dictionary<string, object> rawJSON)
     {
         try
         {
-            currentLevel = LevelLoader.LoadFromJSON(rawJSON,-1);
+            currentLevel = LevelLoader.LoadFromJSON(rawJSON, LevelLoader.levelToLoad, false);
             levelLoaded = true;
             StartCoroutine(InputCooldown(1f));
             levelTimer = 0;
-            levelText.text = "Level " + (currentLevel.LevelID + 1).ToString();
+            levelText.text = "Level " + (currentLevel.LevelID + 1 < 0 ? "0" : ((currentLevel.LevelID + 1).ToString()));
         }
         catch (Exception ex)
         {
@@ -238,10 +251,29 @@ sealed public class Play : MonoBehaviour {
 		gamePaused = false;
 	}
 
+    public void BackToMenu()
+    {
+        Application.LoadLevel(0);
+    }
+
 	public void LeaveGame()
 	{
-		Application.LoadLevel(0);
-	}
+        if (currentLevel.LevelID == -1)
+        {
+            LevelEditor.loadingLevel = true;
+            LevelEditor.loadingWonLevel = false;
+            Application.LoadLevel(2);
+        }
+        else if (currentLevel.LevelID == -2)
+        {
+            Menu.returningFromUserLevel = true;
+            Application.LoadLevel(0);
+        }
+        else
+        {
+            Application.LoadLevel(0);
+        }
+    }
 
 	IEnumerator InputCooldown(float time)
 	{

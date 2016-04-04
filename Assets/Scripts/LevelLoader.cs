@@ -16,11 +16,11 @@ sealed public class LevelLoader : MonoBehaviour {
         List<object> allLevels = Json.Deserialize(rawJSON) as List<object>;
         Dictionary<string, object> levelData = allLevels[index] as Dictionary<string, object>;
 
-        return LoadFromJSON(levelData, index);
+        return LoadFromJSON(levelData, index, false);
     }
 
 	//Load Level from JSON
-	public static Level LoadFromJSON(Dictionary<string, object> levelData, int index)
+	public static Level LoadFromJSON(Dictionary<string, object> levelData, int index, bool calledFromEditor)
 	{
 		#region Throw Exceptions If JSON Data Does Not Contain All Neccessary Fields
 		if(!levelData.ContainsKey("id"))
@@ -72,11 +72,16 @@ sealed public class LevelLoader : MonoBehaviour {
 			if(rawEntityLayer[x] == 'P')
 				filePlayerCount++;
 		}
-		if(!rawGroundLayer.Contains("X"))
-		   throw new Exception("There Must Be Atleast One Finish Block");
 
-		if(filePlayerCount != 1)
-			throw new Exception("Invalid Player Object Count");
+        //Allow players to load unfinished levels into the editor
+        if (!calledFromEditor)
+        {
+            if (!rawGroundLayer.Contains("X"))
+                throw new Exception("There Must Be Atleast One Finish Block");
+
+            if (filePlayerCount != 1)
+                throw new Exception("Invalid Player Object Count");
+        }
 
 		if(((string)levelData["colour"]).Length != 9)
 			throw new Exception("Invalid Background Colour");
@@ -110,7 +115,7 @@ sealed public class LevelLoader : MonoBehaviour {
 				entityLayer[x,y] = rawEntityLayer[x + (levelWidth * y)];
 				if(entityLayer[x,y] != 'Z')
 				{
-					if(entityLayer[x,y] != 'P' || Application.loadedLevel == 3)
+					if(entityLayer[x,y] != 'P' || Application.loadedLevel == 2)
 					{
 						currentObject = Instantiate(GameData.EntityTypes[entityLayer[x,y]], new Vector3(x*2, (index == -1)? 1 : 0, y*2), Quaternion.identity) as GameObject;
 						currentObject.transform.parent = GameObject.Find("Level Objects").transform;
