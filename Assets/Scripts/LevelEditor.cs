@@ -308,13 +308,13 @@ sealed public class LevelEditor : MonoBehaviour {
 	{
         #region Delete Specific Block Found Using Coordinates
 
-		if(levelObjects.transform.FindChild(layer + x.ToString("00") + y.ToString("00")))
+		if(levelObjects.transform.Find(layer + x.ToString("00") + y.ToString("00")))
 		{
-            if (levelObjects.transform.FindChild(layer + x.ToString("00") + y.ToString("00")).GetComponent<Block>().Despawning)
+            if (levelObjects.transform.Find(layer + x.ToString("00") + y.ToString("00")).GetComponent<Block>().Despawning)
                 yield break;
 
             levelChanged = true;
-            levelObjects.transform.FindChild(layer + x.ToString("00") + y.ToString("00")).GetComponent<Block>().Despawn();
+            levelObjects.transform.Find(layer + x.ToString("00") + y.ToString("00")).GetComponent<Block>().Despawn();
 			yield return new WaitForSeconds(0.5f);
 			if(layer == 'G')
 				groundLayout[x,y] = null;
@@ -373,27 +373,27 @@ sealed public class LevelEditor : MonoBehaviour {
 		#region Arrow Enabling/Disabling based on level size
 		//Width too low
 		if(currentWidth <= 4)
-			widthArrows.transform.FindChild("Width Decrease").gameObject.SetActive(false);
-		else if(!widthArrows.transform.FindChild("Width Decrease").gameObject.activeSelf)
-			widthArrows.transform.FindChild("Width Decrease").gameObject.SetActive(true);
+			widthArrows.transform.Find("Width Decrease").gameObject.SetActive(false);
+		else if(!widthArrows.transform.Find("Width Decrease").gameObject.activeSelf)
+			widthArrows.transform.Find("Width Decrease").gameObject.SetActive(true);
 		
 		//Width too high
 		if(currentWidth >= 29)
-			widthArrows.transform.FindChild("Width Increase").gameObject.SetActive(false);
-		else if(!widthArrows.transform.FindChild("Width Increase").gameObject.activeSelf)
-			widthArrows.transform.FindChild("Width Increase").gameObject.SetActive(true);
+			widthArrows.transform.Find("Width Increase").gameObject.SetActive(false);
+		else if(!widthArrows.transform.Find("Width Increase").gameObject.activeSelf)
+			widthArrows.transform.Find("Width Increase").gameObject.SetActive(true);
 		
 		//Length too low
 		if(currentLength <= 4)
-			lengthArrows.transform.FindChild("Length Decrease").gameObject.SetActive(false);
-		else if(!lengthArrows.transform.FindChild("Length Decrease").gameObject.activeSelf)
-			lengthArrows.transform.FindChild("Length Decrease").gameObject.SetActive(true);
+			lengthArrows.transform.Find("Length Decrease").gameObject.SetActive(false);
+		else if(!lengthArrows.transform.Find("Length Decrease").gameObject.activeSelf)
+			lengthArrows.transform.Find("Length Decrease").gameObject.SetActive(true);
 		
 		//Length too high
 		if(currentLength >= 29)
-			lengthArrows.transform.FindChild("Length Increase").gameObject.SetActive(false);
-		else if(!lengthArrows.transform.FindChild("Length Increase").gameObject.activeSelf)
-			lengthArrows.transform.FindChild("Length Increase").gameObject.SetActive(true);
+			lengthArrows.transform.Find("Length Increase").gameObject.SetActive(false);
+		else if(!lengthArrows.transform.Find("Length Increase").gameObject.activeSelf)
+			lengthArrows.transform.Find("Length Increase").gameObject.SetActive(true);
 		#endregion
 	}
 
@@ -612,7 +612,7 @@ sealed public class LevelEditor : MonoBehaviour {
 
     public void SaveLevelSettings()
     {
-        if (levelColor != GameObject.Find("Level Color Select").GetComponent<Image>().color || levelDifficulty != GameObject.Find("Difficulty Field").GetComponent<Text>().text || levelSprite != settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().sprite)
+        if (levelColor != GameObject.Find("Level Color Select").GetComponent<Image>().color || levelDifficulty != GameObject.Find("Difficulty Field").GetComponent<Text>().text || levelSprite != settingsPanel.transform.Find("Level Image Select").transform.Find("Level Image").GetComponent<Image>().sprite)
             minorChange = true;
 
         levelName = GameObject.Find("Level Name Input").GetComponent<InputField>().text;
@@ -654,11 +654,11 @@ sealed public class LevelEditor : MonoBehaviour {
             selectionPanel.SetActive(false);
 
             if (levelSprite == questionMark)
-                settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().color = Color.black;
+                settingsPanel.transform.Find("Level Image Select").transform.Find("Level Image").GetComponent<Image>().color = Color.black;
             else
-                settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().color = Color.white;
+                settingsPanel.transform.Find("Level Image Select").transform.Find("Level Image").GetComponent<Image>().color = Color.white;
 
-            settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().sprite = levelSprite;
+            settingsPanel.transform.Find("Level Image Select").transform.Find("Level Image").GetComponent<Image>().sprite = levelSprite;
         }
         else if(action == "Exit")
         {
@@ -754,8 +754,8 @@ sealed public class LevelEditor : MonoBehaviour {
             settingsPanel.SetActive(true);
             activePanel = settingsPanel;
             Camera.main.GetComponent<CameraControl>().disableRotation = true;
-            settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().color = Color.white;
-            settingsPanel.transform.FindChild("Level Image Select").transform.FindChild("Level Image").GetComponent<Image>().sprite = levelSprite;
+            settingsPanel.transform.Find("Level Image Select").transform.Find("Level Image").GetComponent<Image>().color = Color.white;
+            settingsPanel.transform.Find("Level Image Select").transform.Find("Level Image").GetComponent<Image>().sprite = levelSprite;
 
             //Re-enable the objects that were disabled to take the screenshot
             widthArrows.SetActive(true);
@@ -887,11 +887,11 @@ sealed public class LevelEditor : MonoBehaviour {
 
     public void UploadLevelButton()
     {
-        if(uploadPanel.transform.FindChild("Creator Name Input").GetComponent<InputField>().text.Length < 2)
+        if(uploadPanel.transform.Find("Creator Name Input").GetComponent<InputField>().text.Length < 2)
             return;
 
         Message("Uploading", false);
-        StartCoroutine(UploadLevel(Json.Serialize(levelAsJSON()), uploadPanel.transform.FindChild("Creator Name Input").GetComponent<InputField>().text));
+        StartCoroutine(UploadLevel(Json.Serialize(levelAsJSON()), uploadPanel.transform.Find("Creator Name Input").GetComponent<InputField>().text));
     }
 
     public void ExitEditor()
@@ -928,19 +928,19 @@ sealed public class LevelEditor : MonoBehaviour {
             {
                 newLevelImage = new Texture2D(720, 480);
                 newLevelImage.LoadImage(System.IO.File.ReadAllBytes(levelPath + " Image.png"));
-                levelInformation.FindChild("Open Level Image").GetComponent<Image>().color = Color.white;
-                levelInformation.FindChild("Open Level Image").GetComponent<Image>().sprite = Sprite.Create(newLevelImage, new Rect(0, 0, newLevelImage.width, newLevelImage.height), new Vector2(0.5f, 0.5f));
+                levelInformation.Find("Open Level Image").GetComponent<Image>().color = Color.white;
+                levelInformation.Find("Open Level Image").GetComponent<Image>().sprite = Sprite.Create(newLevelImage, new Rect(0, 0, newLevelImage.width, newLevelImage.height), new Vector2(0.5f, 0.5f));
             }
             else
             {
-                levelInformation.FindChild("Open Level Image").GetComponent<Image>().color = Color.black;
-                levelInformation.FindChild("Open Level Image").GetComponent<Image>().sprite = questionMark;
+                levelInformation.Find("Open Level Image").GetComponent<Image>().color = Color.black;
+                levelInformation.Find("Open Level Image").GetComponent<Image>().sprite = questionMark;
             }
 
             Debug.Log((string)levelData["name"]);
-            levelInformation.FindChild("Open Level Name Text").GetComponent<Text>().text =  "Level Name: " + (string)levelData["name"];
-            levelInformation.FindChild("Open Level Difficulty Text").GetComponent<Text>().text = "Difficulty: " + (string)levelData["difficulty"];
-            levelInformation.FindChild("Open Level Dimensions Text").GetComponent<Text>().text = "Dimensions: " + ((string)levelData["dimensions"]).Substring(0,2) + " x " + ((string)levelData["dimensions"]).Substring(2, 2);
+            levelInformation.Find("Open Level Name Text").GetComponent<Text>().text =  "Level Name: " + (string)levelData["name"];
+            levelInformation.Find("Open Level Difficulty Text").GetComponent<Text>().text = "Difficulty: " + (string)levelData["difficulty"];
+            levelInformation.Find("Open Level Dimensions Text").GetComponent<Text>().text = "Dimensions: " + ((string)levelData["dimensions"]).Substring(0,2) + " x " + ((string)levelData["dimensions"]).Substring(2, 2);
         }
         catch
         {
@@ -967,7 +967,7 @@ sealed public class LevelEditor : MonoBehaviour {
             messageText.GetComponent<Text>().text = message;
 
         activePanel = messagePanel;
-        messagePanel.transform.FindChild("Okay Button").gameObject.SetActive(error ? true : false);
+        messagePanel.transform.Find("Okay Button").gameObject.SetActive(error ? true : false);
     }
 
     //private void ExitMessage()
@@ -979,17 +979,17 @@ sealed public class LevelEditor : MonoBehaviour {
     private void OpenTinker()
     {
         tinkerPanel.SetActive(true);
-        tinkerPanel.transform.FindChild("Group Dropdown").GetComponent<Dropdown>().value = selectedMechanism.group;
+        tinkerPanel.transform.Find("Group Dropdown").GetComponent<Dropdown>().value = selectedMechanism.group;
 
-        if(tinkerPanel.transform.FindChild("Chosen Mechanism").childCount > 0)
-            Destroy(tinkerPanel.transform.FindChild("Chosen Mechanism").GetChild(0).gameObject);
+        if(tinkerPanel.transform.Find("Chosen Mechanism").childCount > 0)
+            Destroy(tinkerPanel.transform.Find("Chosen Mechanism").GetChild(0).gameObject);
 
-        currentObject = Instantiate(GameData.MechanismTypes[selectedMechanism.ID], tinkerPanel.transform.FindChild("Chosen Mechanism").position, Quaternion.Euler(300,180,135)) as GameObject;
-        currentObject.transform.parent = tinkerPanel.transform.FindChild("Chosen Mechanism");
+        currentObject = Instantiate(GameData.MechanismTypes[selectedMechanism.ID], tinkerPanel.transform.Find("Chosen Mechanism").position, Quaternion.Euler(300,180,135)) as GameObject;
+        currentObject.transform.parent = tinkerPanel.transform.Find("Chosen Mechanism");
         currentObject.transform.localScale = new Vector3(1,1,1);
         currentObject.GetComponent<Renderer>().material.mainTexture = Resources.Load("Textures\\" + GameData.MechanismTypes[selectedMechanism.ID].name + selectedMechanism.GetComponent<Mechanism>().group.ToString()) as Texture;
 
-        tinkerPanel.transform.FindChild("Mechanism Name").GetComponent<Text>().text = GameData.MechanismTypes[selectedMechanism.ID].name;
+        tinkerPanel.transform.Find("Mechanism Name").GetComponent<Text>().text = GameData.MechanismTypes[selectedMechanism.ID].name;
 
         //TODO: Implement doors being able to start open
         //if (selectedMechanism.receivesInput)
@@ -1006,9 +1006,9 @@ sealed public class LevelEditor : MonoBehaviour {
     public void TinkerGroupChanged(int group)
     {
         levelChanged = true;
-        selectedMechanism.group = (byte)(tinkerPanel.transform.FindChild("Group Dropdown").GetComponent<Dropdown>().value);
+        selectedMechanism.group = (byte)(tinkerPanel.transform.Find("Group Dropdown").GetComponent<Dropdown>().value);
         selectedMechanism.GetComponent<Renderer>().material.mainTexture = Resources.Load("Textures\\" + GameData.MechanismTypes[selectedMechanism.ID].name + selectedMechanism.GetComponent<Mechanism>().group.ToString()) as Texture;
-        tinkerPanel.transform.FindChild("Chosen Mechanism").GetChild(0).GetComponent<Renderer>().material.mainTexture = Resources.Load("Textures\\" + GameData.MechanismTypes[selectedMechanism.ID].name + selectedMechanism.GetComponent<Mechanism>().group.ToString()) as Texture;
+        tinkerPanel.transform.Find("Chosen Mechanism").GetChild(0).GetComponent<Renderer>().material.mainTexture = Resources.Load("Textures\\" + GameData.MechanismTypes[selectedMechanism.ID].name + selectedMechanism.GetComponent<Mechanism>().group.ToString()) as Texture;
     }
 
     public void TakeScreenshot()
