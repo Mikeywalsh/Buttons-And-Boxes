@@ -155,11 +155,11 @@ public class Menu : MonoBehaviour {
 
     private IEnumerator GetUserLevels(int page)
     {
-        WWWForm form = new WWWForm();
+        //WWWForm form = new WWWForm();
+        //form.AddField("page", page.ToString());
 
-        form.AddField("page", page.ToString());
+        WWW w = new WWW("michaelwalsh.co.uk/Demos/Buttons_And_Boxes/LevelList.txt");
 
-        WWW w = new WWW("michael-walsh.co.uk/getLevels.php", form);
         userLevelMessageText.SetActive(true);
         userLevelMessageText.GetComponent<Text>().text = "Loading Page...";
 
@@ -220,11 +220,10 @@ public class Menu : MonoBehaviour {
 
     private IEnumerator LoadPlayerLevel(int id)
     {
-        WWWForm form = new WWWForm();
+        //WWWForm form = new WWWForm();
+        //form.AddField("LevelID", userLevelIDs[id].ToString());
 
-        form.AddField("LevelID", userLevelIDs[id].ToString());
-
-        WWW w = new WWW("michael-walsh.co.uk/downloadLevel.php", form);
+        WWW w = new WWW("michaelwalsh.co.uk/Demos/Buttons_And_Boxes/BeginnerButtons.txt");
 
         userLevelMessageText.SetActive(true);
         userLevelMessageText.GetComponent<Text>().text = "Loading Level...";
