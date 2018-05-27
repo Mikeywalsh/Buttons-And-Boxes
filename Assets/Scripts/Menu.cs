@@ -159,7 +159,6 @@ public class Menu : MonoBehaviour {
 
         form.AddField("page", page.ToString());
 
-        //WWW w = new WWW("127.0.0.1/getLevels.php", form);
         WWW w = new WWW("michael-walsh.co.uk/getLevels.php", form);
         userLevelMessageText.SetActive(true);
         userLevelMessageText.GetComponent<Text>().text = "Loading Page...";
@@ -225,7 +224,6 @@ public class Menu : MonoBehaviour {
 
         form.AddField("LevelID", userLevelIDs[id].ToString());
 
-        //WWW w = new WWW("127.0.0.1/downloadLevel.php", form);
         WWW w = new WWW("michael-walsh.co.uk/downloadLevel.php", form);
 
         userLevelMessageText.SetActive(true);
