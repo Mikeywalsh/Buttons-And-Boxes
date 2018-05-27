@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using MiniJSON;
+using UnityEngine.SceneManagement;
 
 sealed public class LevelEditor : MonoBehaviour {
     public static bool loadingLevel;
@@ -597,7 +598,7 @@ sealed public class LevelEditor : MonoBehaviour {
 
         LevelLoader.levelToLoad = -1;
         LevelLoader.JSONToLoad = levelAsJSON();
-        Application.LoadLevel(1);
+        SceneManager.LoadScene(1);
     }
 
     private bool ValidMousePos()
@@ -896,7 +897,7 @@ sealed public class LevelEditor : MonoBehaviour {
 
     public void ExitEditor()
     {
-        Application.LoadLevel(0);
+        SceneManager.LoadScene(0);
     }
 
     public void SaveExit()

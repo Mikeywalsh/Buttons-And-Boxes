@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 sealed public class Play : MonoBehaviour {
 
@@ -70,7 +71,7 @@ sealed public class Play : MonoBehaviour {
             else
             {
                 if (currentLevel.LevelID == 8)
-                    Application.LoadLevel(0);
+                    SceneManager.LoadScene(0);
                 else
                     StartCoroutine(StartLevelWait(currentLevel.LevelID + 1));
             }
@@ -151,9 +152,9 @@ sealed public class Play : MonoBehaviour {
 		yield return new WaitForSeconds(1.25f);
 
         if (ID == -1)
-            Application.LoadLevel(2);
+            SceneManager.LoadScene(2);
         else if (ID == -2)
-            Application.LoadLevel(0);
+            SceneManager.LoadScene(0);
         else
         {
             if (PlayerPrefs.GetInt("currentLevel") < ID)
@@ -241,7 +242,7 @@ sealed public class Play : MonoBehaviour {
 
 	public void ErrorButtonClicked()
 	{
-		Application.LoadLevel(0);
+        SceneManager.LoadScene(0);
 	}
 
 	public void UnPause()
@@ -253,7 +254,7 @@ sealed public class Play : MonoBehaviour {
 
     public void BackToMenu()
     {
-        Application.LoadLevel(0);
+        SceneManager.LoadScene(0);
     }
 
 	public void LeaveGame()
@@ -262,16 +263,16 @@ sealed public class Play : MonoBehaviour {
         {
             LevelEditor.loadingLevel = true;
             LevelEditor.loadingWonLevel = false;
-            Application.LoadLevel(2);
+            SceneManager.LoadScene(2);
         }
         else if (currentLevel.LevelID == -2)
         {
             Menu.returningFromUserLevel = true;
-            Application.LoadLevel(0);
+            SceneManager.LoadScene(0);
         }
         else
         {
-            Application.LoadLevel(0);
+            SceneManager.LoadScene(0);
         }
     }
 

@@ -2,6 +2,7 @@
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 public class Menu : MonoBehaviour {
 
@@ -76,19 +77,19 @@ public class Menu : MonoBehaviour {
 	public void StartGameAtLevel(int level)
 	{
 		LevelLoader.levelToLoad = level;
-		Application.LoadLevel(1);
+        SceneManager.LoadScene(1);
 	}
 
 	public void EnterLevelEditor()
 	{
-		Application.LoadLevel(2);
+        SceneManager.LoadScene(2);
 	}
 
 	public void StartNewGame()
 	{
 		PlayerPrefs.SetInt("currentLevel", 0);
 		LevelLoader.levelToLoad = 0;
-		Application.LoadLevel(1);
+        SceneManager.LoadScene(1);
 	}
 
     public void EnterWorldSelect()
@@ -248,7 +249,7 @@ public class Menu : MonoBehaviour {
             LevelLoader.JSONToLoad = MiniJSON.Json.Deserialize(w.text) as Dictionary<string, object>;
             LevelLoader.levelToLoad = -2;
             returnPage = currentPage;
-            Application.LoadLevel(1);
+            SceneManager.LoadScene(1);
         }
     }
 
